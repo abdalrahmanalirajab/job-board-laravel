@@ -67,4 +67,16 @@ class AuthController extends Controller
             'access_token' => $token,
         ]);
     }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logged out successfully']);
+    }   
+    
+    //get all users with profiles 
+    public function getAllUsers()
+    {
+        return response()->json(User::all()->load('employerProfile', 'candidateProfile'));
+    }
 }
