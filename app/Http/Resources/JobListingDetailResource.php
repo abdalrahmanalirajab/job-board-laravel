@@ -20,7 +20,9 @@ class JobListingDetailResource extends JsonResource
             'description' => $this->description,
             'responsibilities' => $this->responsibilities,
             'skills_required' => $this->skills_required,
-            'applications_count' => (int) ($this->applications_count ?? ($this->relationLoaded('applications') ? $this->applications->count() : $this->applications()->count())),
+            'applications_count' => class_exists('App\\Models\\Application')
+                ? (int) ($this->applications_count ?? ($this->relationLoaded('applications') ? $this->applications->count() : $this->applications()->count()))
+                : 0,
             'comments' => CommentResource::collection($this->whenLoaded('comments')),
         ]);
     }
