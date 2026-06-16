@@ -18,20 +18,20 @@ class UpdateJobListingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => 'sometimes|required|exists:categories,id',
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
             'responsibilities' => 'sometimes|required|string',
             'skills_required' => 'sometimes|required|string',
-            'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
+            'category_id' => 'sometimes|required|exists:categories,id',
             'location' => 'sometimes|required|string|max:255',
             'work_type' => 'sometimes|required|string|in:remote,onsite,hybrid',
-            'experience_level' => 'nullable|string|in:junior,mid,senior,any',
-            'deadline' => 'nullable|date',
-            'logo' => 'nullable|image|max:2048',
-            'technologies' => 'nullable|array',
-            'technologies.*' => 'required|string|max:255',
+            'experience_level' => 'sometimes|required|string|in:junior,mid,senior,any',
+            'salary_min' => 'sometimes|nullable|integer|min:0',
+            'salary_max' => 'sometimes|nullable|integer|min:0|gte:salary_min',
+            'deadline' => 'sometimes|nullable|date|after:today',
+            'technologies' => 'sometimes|nullable|array',
+            'technologies.*' => 'string|max:100',
+            'logo' => 'sometimes|nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
 }

@@ -18,20 +18,20 @@ class StoreJobListingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'responsibilities' => 'required|string',
             'skills_required' => 'required|string',
-            'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
+            'category_id' => 'required|exists:categories,id',
             'location' => 'required|string|max:255',
             'work_type' => 'required|string|in:remote,onsite,hybrid',
-            'experience_level' => 'nullable|string|in:junior,mid,senior,any',
-            'deadline' => 'nullable|date|after_or_equal:today',
-            'logo' => 'nullable|image|max:2048',
+            'experience_level' => 'required|string|in:junior,mid,senior,any',
+            'salary_min' => 'nullable|integer|min:0',
+            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
+            'deadline' => 'nullable|date|after:today',
             'technologies' => 'nullable|array',
-            'technologies.*' => 'required|string|max:255',
+            'technologies.*' => 'string|max:100',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
 }
