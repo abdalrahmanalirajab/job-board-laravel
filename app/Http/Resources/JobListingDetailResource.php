@@ -14,31 +14,14 @@ class JobListingDetailResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
-            'id' => $this->id,
-            'employer_id' => $this->employer_id,
-            'category_id' => $this->category_id,
-            'title' => $this->title,
+        $base = (new JobListingResource($this))->toArray($request);
+
+        return array_merge($base, [
             'description' => $this->description,
             'responsibilities' => $this->responsibilities,
             'skills_required' => $this->skills_required,
-            'salary_min' => $this->salary_min,
-            'salary_max' => $this->salary_max,
-            'location' => $this->location,
-            'work_type' => $this->work_type,
-            'experience_level' => $this->experience_level,
-            'status' => $this->status,
-            'deadline' => $this->deadline?->toDateString(),
-            'logo' => $this->logo,
-            'logo_url' => $this->logo ? asset('storage/' . $this->logo) : null,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-            'category' => $this->whenLoaded('category'),
-            'technologies' => $this->whenLoaded('technologies', function () {
-                return $this->technologies->pluck('name');
-            }),
-            'employer' => $this->whenLoaded('employer'),
-            'comments' => $this->whenLoaded('comments'),
-        ];
+            'applications_count' => (int) ($this->applications_count ?? ($this->relationLoaded('applications') ? $this->applications->count() : $this->applications()->count())),
+            'comments' => CommentResource::collection($this->whenLoaded('comments')),
+        ]);
     }
 }
