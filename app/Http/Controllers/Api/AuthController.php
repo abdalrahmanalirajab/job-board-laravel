@@ -9,6 +9,8 @@ use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
+
 
 class AuthController extends Controller
 {
@@ -27,11 +29,22 @@ class AuthController extends Controller
         // initialize  profiles based on userrole 
         if ($user->isEmployer()) { 
             $user->employerProfile()->create([
-                'company_name' => $validated['company_name']
+                'company_name' => $validated['company_name'],
+                'website' => $validated['website'] ?? null,
+                'description' => $validated['description'] ?? null,
+                'logo' => $validated['logo'] ?? null
             ]);
             $user->load('employerProfile');
-        } else { 
-            $user->candidateProfile()->create();
+        } else {
+            if ($request->has('skills')) {
+                $validated['skills'] = array_map('trim', explode(',', $request->input('skills')));
+            }
+            
+            $user->candidateProfile()->create([
+                'linkedin_url' => $validated['linkedin_url'] ?? null,
+                'bio' => $validated['bio'] ?? null,
+                'skills' => $validated['skills'] ?? null
+            ]);
             $user->load('candidateProfile');
         }
 
@@ -41,7 +54,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'access_token' => $token,
-            'user'=> $user
+            'token_type' => 'Bearer'
         ], 201);
     }
 

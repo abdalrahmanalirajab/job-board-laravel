@@ -8,13 +8,15 @@ use App\Http\Requests\UpdateJobListingRequest;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+
 
 class JobListingController extends Controller
 {
     public function index()
     {
         try {
-            $jobListings = JobListing::where('employer_id', auth()->id())
+            $jobListings = JobListing::where('employer_id', Auth::id())
                 ->with(['category', 'technologies'])
                 ->get();
 
@@ -40,7 +42,7 @@ class JobListingController extends Controller
             }
 
             $data = $request->safe()->except(['technologies', 'logo']);
-            $data['employer_id'] = auth()->id();
+            $data['employer_id'] = Auth::id();
             $data['status']      = 'pending'; // Always pending — admin must approve
             if ($logoPath !== null) {
                 $data['logo'] = $logoPath;
@@ -85,7 +87,7 @@ class JobListingController extends Controller
                 ], 404);
             }
 
-            if ($jobListing->employer_id !== auth()->id()) {
+            if ($jobListing->employer_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Forbidden. You do not own this job listing.',
@@ -119,7 +121,7 @@ class JobListingController extends Controller
                 ], 404);
             }
 
-            if ($jobListing->employer_id !== auth()->id()) {
+            if ($jobListing->employer_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Forbidden. You do not own this job listing.',
@@ -180,7 +182,7 @@ class JobListingController extends Controller
                 ], 404);
             }
 
-            if ($jobListing->employer_id !== auth()->id()) {
+            if ($jobListing->employer_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Forbidden. You do not own this job listing.',
