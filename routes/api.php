@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\Employer\JobListingController as EmployerJobListingController;
 use App\Http\Controllers\Api\Admin\JobListingController as AdminJobListingController;
+use App\Http\Controllers\Api\ProfileController;
+
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -24,7 +26,10 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'getAllUsers']);
+
+    // profile routes 
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
 
     // Employer routes
     Route::middleware('employer')->prefix('employer')->group(function () {

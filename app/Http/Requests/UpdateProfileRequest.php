@@ -21,13 +21,13 @@ class UpdateProfileRequest extends FormRequest
         $user = $this->user() ;
 
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'], 
+            'name' => ['sometimes', 'string', 'max:255'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
 
         // if employer
         if ($user->isEmployer()) {
-            $rules['company_name'] = ['required', 'string', 'max:255'];
+            $rules['company_name'] = ['sometimes','required', 'string', 'max:255'];
             $rules['website'] = ['nullable', 'url', 'max:255'];
             $rules['description'] = ['nullable', 'string'];
             $rules['logo'] = ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'];
@@ -37,8 +37,7 @@ class UpdateProfileRequest extends FormRequest
         if ($user->isCandidate()) {
             $rules['linkedin_url'] = ['nullable', 'url', 'max:255'];
             $rules['bio'] = ['nullable', 'string'];
-            $rules['skills'] = ['nullable', 'array']; 
-            $rules['resume'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:4096']; // Max 4MB files
+            $rules['skills'] = ['nullable', 'string'];            $rules['resume'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:4096']; // Max 4MB files
         }
 
         return $rules;
