@@ -23,14 +23,28 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        
+       $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(['employer', 'candidate'])], 
-            
-            // Company name is required if the registration role is set to employer 
-            'company_name' => [Rule::requiredIf($this->role === 'employer'), 'string', 'max:255'],
+            'role' => ['required', 'string', Rule::in(['admin', 'employer', 'candidate'])],
         ];
+
+        if ($this->input('role') === 'employer') {
+            $rules['company_name'] = ['required', 'string', 'max:255'];
+            $rules['website'] = ['nullable', 'url', 'max:255'];
+            $rules['description'] = ['nullable', 'string'];
+            $rules['logo'] = ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'];
+        }
+
+        if ($this->input('role') === 'candidate') {
+            $rules['linkedin_url'] = ['nullable', 'url', 'max:255'];
+            $rules['bio'] = ['nullable', 'string'];
+            $rules['skills'] = ['nullable', 'string'];
+            $rules['resume'] = ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:4096']; // Max 4MB files
+
+        }
+        return $rules;
     }
 }
