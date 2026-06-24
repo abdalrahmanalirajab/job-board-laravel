@@ -27,7 +27,7 @@ class StoreJobListingRequest extends FormRequest
             'work_type' => 'required|string|in:remote,onsite,hybrid',
             'experience_level' => 'required|string|in:junior,mid,senior,any',
             'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
+            'salary_max' => 'nullable|integer|min:0',
             'deadline' => 'nullable|date|after:today',
             'technologies' => 'nullable|array',
             'technologies.*' => 'string|max:100',
