@@ -6,14 +6,17 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EmployerMiddleware
+class EnsureIsEmployer
 {
+    /**
+     * Handle an incoming request.
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || ! $request->user()->isEmployer()) {
+        if (!$request->user() || !$request->user()->isEmployer()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Forbidden. Employer access required.'
+                'message' => 'Unauthorized. Access denied.',
             ], 403);
         }
 

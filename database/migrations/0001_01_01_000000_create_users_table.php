@@ -18,6 +18,7 @@ return new class extends Migration
     $table->string('password');
     $table->enum('role', ['admin', 'employer', 'candidate'])->default('candidate'); // 
     $table->string('avatar')->nullable(); // 
+    $table->rememberToken();
     $table->timestamps();
         });
 
