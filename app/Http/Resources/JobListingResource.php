@@ -16,6 +16,47 @@ class JobListingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $logoUrl = null;
+        if ($this->logo) {
+            $logoUrl = Str::startsWith($this->logo, ['http://', 'https://']) 
+                ? $this->logo 
+                : asset(Storage::url($this->logo));
+        }
+
+        $category = null;
+        if ($this->relationLoaded('category') && $this->category) {
+            $category = [
+                'id' => $this->category->id,
+                'name' => $this->category->name,
+            ];
+        }
+
+        $technologies = [];
+        if ($this->relationLoaded('technologies') && $this->technologies) {
+            $technologies = $this->technologies->pluck('name')->toArray();
+        }
+
+        $employer = null;
+        if ($this->relationLoaded('employer') && $this->employer) {
+            $profile = $this->employer->employerProfile;
+            if (!$profile && !$this->employer->relationLoaded('employerProfile')) {
+                $profile = $this->employer->employerProfile()->first();
+            }
+
+            $employerLogo = null;
+            if ($profile && $profile->logo) {
+                $employerLogo = Str::startsWith($profile->logo, ['http://', 'https://'])
+                    ? $profile->logo
+                    : asset(Storage::url($profile->logo));
+            }
+
+            $employer = [
+                'id' => $this->employer->id,
+                'company_name' => $profile ? $profile->company_name : null,
+                'logo' => $employerLogo,
+            ];
+        }
+
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -26,30 +67,11 @@ class JobListingResource extends JsonResource
             'salary_max' => $this->salary_max,
             'status' => $this->status,
             'deadline' => $this->deadline?->toDateString(),
-            'logo' => $this->logo ? (Str::startsWith($this->logo, ['http://', 'https://']) ? $this->logo : Storage::disk('public')->url($this->logo)) : null,
+            'logo' => $logoUrl,
             'created_at' => $this->created_at,
-            'category' => $this->whenLoaded('category', function () {
-                return [
-                    'id' => $this->category->id,
-                    'name' => $this->category->name,
-                ];
-            }),
-            'technologies' => $this->whenLoaded('technologies', function () {
-                return $this->technologies->pluck('name')->toArray();
-            }),
-            'employer' => $this->whenLoaded('employer', function () {
-                $profile = $this->employer->relationLoaded('employerProfile') 
-                    ? $this->employer->employerProfile 
-                    : ($this->employer->employerProfile()->first() ?? null);
-
-                return [
-                    'id' => $this->employer->id,
-                    'company_name' => $profile ? $profile->company_name : null,
-                    'logo' => $profile && $profile->logo 
-                        ? (Str::startsWith($profile->logo, ['http://', 'https://']) ? $profile->logo : Storage::disk('public')->url($profile->logo)) 
-                        : null,
-                ];
-            }),
+            'category' => $category,
+            'technologies' => $technologies,
+            'employer' => $employer,
         ];
     }
 }

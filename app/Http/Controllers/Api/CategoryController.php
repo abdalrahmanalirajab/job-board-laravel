@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\JobListingResource;
 use App\Models\Category;
 
 class CategoryController extends Controller
@@ -43,9 +44,18 @@ class CategoryController extends Controller
                 ], 404);
             }
 
-            return (new CategoryResource($category))->additional([
+            $jobs = $category->jobListings()
+                ->approved()
+                ->with(['category', 'technologies', 'employer.employerProfile'])
+                ->paginate(10);
+
+            return response()->json([
                 'success' => true,
-                'message' => 'Category retrieved successfully.',
+                'message' => 'Category and its jobs retrieved successfully.',
+                'data' => [
+                    'category' => new CategoryResource($category),
+                    'jobs' => JobListingResource::collection($jobs)->response()->getData(true),
+                ]
             ]);
         } catch (\Throwable $e) {
             return response()->json([

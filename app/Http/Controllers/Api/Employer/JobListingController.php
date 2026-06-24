@@ -195,6 +195,9 @@ class JobListingController extends Controller
                 Storage::disk('public')->delete($jobListing->logo);
             }
 
+            // Explicitly delete associated technologies
+            $jobListing->technologies()->delete();
+
             $jobListing->delete();
 
             return response()->json([

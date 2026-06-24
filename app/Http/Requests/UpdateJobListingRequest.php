@@ -27,7 +27,7 @@ class UpdateJobListingRequest extends FormRequest
             'work_type' => 'sometimes|required|string|in:remote,onsite,hybrid',
             'experience_level' => 'sometimes|required|string|in:junior,mid,senior,any',
             'salary_min' => 'sometimes|nullable|integer|min:0',
-            'salary_max' => 'sometimes|nullable|integer|min:0|gte:salary_min',
+            'salary_max' => 'sometimes|nullable|integer|min:0',
             'deadline' => 'sometimes|nullable|date|after:today',
             'technologies' => 'sometimes|nullable|array',
             'technologies.*' => 'string|max:100',
