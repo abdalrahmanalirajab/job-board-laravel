@@ -26,7 +26,11 @@ class CommentSeeder extends Seeder
       ['body' => 'Yes, remote work is fully supported.', 'user_id' => $employer?->id],
     ];
 
-    foreach ($approvedJobs->take(2) as $job) {
+    $count = 0;
+    foreach ($approvedJobs as $job) {
+      if ($count >= 5) {
+        break;
+      }
       foreach ($comments as $comment) {
         if ($comment['user_id'] === null) {
           continue;
@@ -38,6 +42,7 @@ class CommentSeeder extends Seeder
           'is_visible' => true,
         ]);
       }
+      $count++;
     }
   }
 }

@@ -8,9 +8,9 @@ use App\Models\User;
 class ApplicationPolicy
 {
   /**
-   * Determine if a candidate can cancel this application.
+   * Determine if a candidate can cancel/delete this application.
    */
-  public function cancel(User $user, Application $application): bool
+  public function delete(User $user, Application $application): bool
   {
     return $user->id === $application->candidate_id && $application->status === 'pending';
   }

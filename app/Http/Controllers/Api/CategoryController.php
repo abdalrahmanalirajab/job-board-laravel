@@ -49,13 +49,13 @@ class CategoryController extends Controller
                 ->with(['category', 'technologies', 'employer.employerProfile'])
                 ->paginate(10);
 
+            $categoryData = (new CategoryResource($category))->resolve();
+            $categoryData['jobs'] = JobListingResource::collection($jobs)->response()->getData(true);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Category and its jobs retrieved successfully.',
-                'data' => [
-                    'category' => new CategoryResource($category),
-                    'jobs' => JobListingResource::collection($jobs)->response()->getData(true),
-                ]
+                'data' => $categoryData
             ]);
         } catch (\Throwable $e) {
             return response()->json([
