@@ -12,143 +12,139 @@ use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
-  /**
-   * Candidate applies for a job
-   */
-  public function apply(StoreApplicationRequest $request, JobListing $job)
-  {
-    $user = $request->user();
+    /**
+     * Candidate applies for a job
+     */
+    public function store(StoreApplicationRequest $request, $jobId)
+    {
+        $job = JobListing::find($jobId);
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job listing not found.',
+                'data' => null
+            ], 404);
+        }
 
-    // Ensure user is a candidate
-    if ($user->role !== 'candidate') {
-      return response()->json(['message' => 'Only candidates can apply for jobs.'], 403);
+        // Check if job is approved
+        if ($job->status !== 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only apply for approved job listings',
+                'data' => null
+            ], 422);
+        }
+
+        // Check if job deadline is passed
+        if ($job->deadline && $job->deadline->endOfDay()->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The application deadline for this job has passed',
+                'data' => null
+            ], 422);
+        }
+
+        // Prevent duplicate applications
+        $existing = Application::where('job_listing_id', $job->id)
+            ->where('candidate_id', $request->user()->id)
+            ->exists();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already applied for this job',
+                'data' => null
+            ], 422);
+        }
+
+        $resumePath = null;
+        if ($request->hasFile('resume')) {
+            $resumePath = $request->file('resume')->store('resumes', 'public');
+        }
+
+        $application = Application::create([
+            'job_listing_id' => $job->id,
+            'candidate_id' => $request->user()->id,
+            'resume_path' => $resumePath,
+            'contact_email' => $request->input('contact_email'),
+            'contact_phone' => $request->input('contact_phone'),
+            'status' => 'pending',
+            'applied_at' => now(),
+        ]);
+
+        return (new ApplicationResource($application->load(['jobListing', 'candidate'])))
+            ->additional([
+                'success' => true,
+                'message' => 'Application submitted successfully.',
+            ])
+            ->response()
+            ->setStatusCode(201);
     }
 
-    // Check if job is approved
-    if ($job->status !== 'approved') {
-      return response()->json(['message' => 'You can only apply to approved jobs.'], 422);
+    /**
+     * Candidate cancels their application
+     */
+    public function destroy($id)
+    {
+        $application = Application::find($id);
+        if (!$application) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Application not found.',
+                'data' => null
+            ], 404);
+        }
+
+        if ($application->candidate_id !== auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to cancel this application.',
+                'data' => null
+            ], 403);
+        }
+
+        if ($application->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot cancel an application that has already been reviewed',
+                'data' => null
+            ], 422);
+        }
+
+        if ($application->resume_path) {
+            Storage::disk('public')->delete($application->resume_path);
+        }
+
+        $application->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Application cancelled successfully.',
+            'data' => null
+        ]);
     }
 
-    // Prevent duplicate applications
-    $existing = Application::where('job_listing_id', $job->id)
-      ->where('candidate_id', $user->id)
-      ->first();
+    /**
+     * List candidate's own applications
+     */
+    public function myApplications(Request $request)
+    {
+        $user = $request->user();
+        $query = Application::where('candidate_id', $user->id);
 
-    if ($existing) {
-      return response()->json(['message' => 'You have already applied for this job.'], 409);
+        if ($request->has('status') && in_array($request->status, ['pending', 'accepted', 'rejected'])) {
+            $query->where('status', $request->status);
+        }
+
+        $applications = $query->with([
+            'jobListing' => function ($q) {
+                $q->with(['category', 'employer.employerProfile']);
+            }
+        ])->latest()->paginate(10);
+
+        return ApplicationResource::collection($applications)->additional([
+            'success' => true,
+            'message' => 'Your applications retrieved successfully.'
+        ]);
     }
-
-    $data = [
-      'job_listing_id' => $job->id,
-      'candidate_id' => $user->id,
-      'contact_email' => $request->input('contact_email', $user->email),
-      'contact_phone' => $request->input('contact_phone'),
-      'status' => 'pending',
-      'applied_at' => now(),
-    ];
-
-    // Handle resume upload
-    if ($request->hasFile('resume')) {
-      $path = $request->file('resume')->store('resumes', 'public');
-      $data['resume_path'] = $path;
-    }
-
-    $application = Application::create($data);
-
-    return new ApplicationResource($application);
-  }
-
-  /**
-   * Candidate cancels their application
-   */
-  public function cancel(Request $request, Application $application)
-  {
-    $user = $request->user();
-
-    if ($application->candidate_id !== $user->id) {
-      return response()->json(['message' => 'You can only cancel your own applications.'], 403);
-    }
-
-    if ($application->status !== 'pending') {
-      return response()->json(['message' => 'You can only cancel pending applications.'], 422);
-    }
-
-    $application->delete();
-
-    return response()->json(['message' => 'Application cancelled successfully.']);
-  }
-
-  /**
-   * List candidate's own applications
-   */
-  public function candidateApplications(Request $request)
-  {
-    $user = $request->user();
-
-    $applications = Application::where('candidate_id', $user->id)
-      ->with(['jobListing', 'candidate'])
-      ->latest()
-      ->paginate(20);
-
-    return ApplicationResource::collection($applications);
-  }
-
-  /**
-   * List applications received by employer (for their jobs)
-   */
-  public function employerApplications(Request $request)
-  {
-    $user = $request->user();
-
-    $applications = Application::whereHas('jobListing', function ($query) use ($user) {
-      $query->where('employer_id', $user->id);
-    })
-      ->with(['jobListing', 'candidate'])
-      ->latest()
-      ->paginate(20);
-
-    return ApplicationResource::collection($applications);
-  }
-
-  /**
-   * Employer accepts an application
-   */
-  public function accept(Request $request, Application $application)
-  {
-    $user = $request->user();
-
-    // Ensure employer owns the job
-    if ($application->jobListing->employer_id !== $user->id) {
-      return response()->json(['message' => 'You can only manage applications for your own jobs.'], 403);
-    }
-
-    if ($application->status !== 'pending') {
-      return response()->json(['message' => 'This application has already been processed.'], 422);
-    }
-
-    $application->update(['status' => 'accepted']);
-
-    return new ApplicationResource($application->load(['jobListing', 'candidate']));
-  }
-
-  /**
-   * Employer rejects an application
-   */
-  public function reject(Request $request, Application $application)
-  {
-    $user = $request->user();
-
-    // Ensure employer owns the job
-    if ($application->jobListing->employer_id !== $user->id) {
-      return response()->json(['message' => 'You can only manage applications for your own jobs.'], 422);
-    }
-
-    if ($application->status !== 'pending') {
-      return response()->json(['message' => 'This application has already been processed.'], 422);
-    }
-
-    $application->update(['status' => 'rejected']);
-
-    return new ApplicationResource($application->load(['jobListing', 'candidate']));
-  }
 }

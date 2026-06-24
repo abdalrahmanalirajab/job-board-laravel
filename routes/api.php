@@ -20,7 +20,7 @@ Route::post('/reset', [AuthController::class, 'reset'])->name('password.reset');
 // Public routes
 Route::get('/jobs', [JobListingController::class, 'index']);
 Route::get('/jobs/{id}', [JobListingController::class, 'show']);
-Route::get('/jobs/{job}/comments', [CommentController::class, 'index']);
+Route::get('/jobs/{id}/comments', [CommentController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
@@ -43,16 +43,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Candidate routes
     Route::middleware('candidate')->group(function () {
-        Route::post('/jobs/{job}/apply', [ApplicationController::class, 'apply']);
-        Route::delete('/applications/{application}', [ApplicationController::class, 'cancel']);
-        Route::get('/candidate/applications', [ApplicationController::class, 'candidateApplications']);
+        Route::post('/jobs/{id}/apply', [ApplicationController::class, 'store']);
+        Route::delete('/applications/{id}', [ApplicationController::class, 'destroy']);
+        Route::get('/candidate/applications', [ApplicationController::class, 'myApplications']);
     });
 
     // Employer application routes
     Route::middleware('employer')->group(function () {
-        Route::get('/employer/applications', [ApplicationController::class, 'employerApplications']);
-        Route::put('/applications/{application}/accept', [ApplicationController::class, 'accept']);
-        Route::put('/applications/{application}/reject', [ApplicationController::class, 'reject']);
+        Route::get('/employer/applications', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'index']);
+        Route::put('/applications/{id}/accept', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'accept']);
+        Route::put('/applications/{id}/reject', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'reject']);
     });
 
     // Admin routes
@@ -63,6 +63,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Authenticated comment actions
-    Route::post('/jobs/{job}/comments', [CommentController::class, 'store']);
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::post('/jobs/{id}/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
 });
