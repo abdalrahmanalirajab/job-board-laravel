@@ -26,6 +26,7 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'me']);
 
     // profile routes 
     Route::get('/profile', [ProfileController::class, 'show']);
