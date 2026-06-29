@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             JobListingSeeder::class,
             ApplicationSeeder::class,
             CommentSeeder::class,
+            PaymentSeeder::class,
         ]);
     }
 }

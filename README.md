@@ -1,57 +1,175 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Job Board Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A multi-role job board web application built with Laravel 13 + Sanctum. Connects employers, job candidates, and administrators.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Role-based authentication** — Admin, Employer, and Candidate accounts
+- **Job listings** — Employers create, edit, and manage job posts
+- **Search & filtering** — Filter jobs by keyword, location, category, work type, experience level, and salary range
+- **Approval workflow** — Admin approves or rejects job listings before they go live
+- **Applications** — Candidates apply with resume or contact info; employers accept or reject
+- **Comments** — Discuss job listings; admin can hide inappropriate comments
+- **Payments** — Stripe integration for employer payments on accepted applications
+- **Notifications** — Candidates receive database notifications on application status changes
+- **Analytics** — Employers view job statistics; admin views platform overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP ^8.3
+- Composer
+- SQLite (default) or MySQL / PostgreSQL
+- Node.js & NPM (for frontend assets via Vite)
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installation
 
 ```bash
-composer require laravel/boost --dev
+# Clone the repository
+git clone <repository-url>
+cd job-board-laravel
 
-php artisan boost:install
+# Install PHP dependencies
+composer install
+
+# Copy environment file and generate app key
+cp .env.example .env
+php artisan key:generate
+
+# Run database migrations and seeders
+php artisan migrate --seed
+
+# Create storage symlink (for file uploads)
+php artisan storage:link
+
+# Install and build frontend assets (optional)
+npm install
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Default Credentials
 
-## Contributing
+| Role      | Email                  | Password |
+|-----------|------------------------|----------|
+| Admin     | admin@jobboard.com     | password |
+| Employer  | employer@jobboard.com  | password |
+| Candidate | candidate@jobboard.com | password |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## API Endpoints
 
-## Code of Conduct
+### Authentication
+| Method | Endpoint              | Description        |
+|--------|-----------------------|--------------------|
+| POST   | `/api/register`       | Register new user  |
+| POST   | `/api/login`          | Login              |
+| POST   | `/api/logout`         | Logout             |
+| GET    | `/api/user`           | Current user       |
+| POST   | `/api/send-reset-link`| Send password reset|
+| POST   | `/api/reset`          | Reset password     |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Profile
+| Method | Endpoint          | Description          |
+|--------|-------------------|----------------------|
+| GET    | `/api/profile`    | View profile         |
+| PUT    | `/api/profile`    | Update profile       |
 
-## Security Vulnerabilities
+### Job Listings (Public)
+| Method | Endpoint              | Description              |
+|--------|-----------------------|--------------------------|
+| GET    | `/api/jobs`           | List approved jobs       |
+| GET    | `/api/jobs/{id}`      | Show job details         |
+| GET    | `/api/categories`     | List categories          |
+| GET    | `/api/categories/{id}`| Show category with jobs  |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Job Listings (Employer)
+| Method | Endpoint                     | Description              |
+|--------|------------------------------|--------------------------|
+| GET    | `/api/employer/jobs`         | List own jobs            |
+| POST   | `/api/employer/jobs`         | Create job listing       |
+| GET    | `/api/employer/jobs/{id}`    | Show own job             |
+| PUT    | `/api/employer/jobs/{id}`    | Update job listing       |
+| DELETE | `/api/employer/jobs/{id}`    | Delete job listing       |
+
+### Job Listings (Admin)
+| Method | Endpoint                         | Description          |
+|--------|----------------------------------|----------------------|
+| GET    | `/api/admin/jobs`                | List all jobs        |
+| PUT    | `/api/admin/jobs/{id}/approve`   | Approve job listing  |
+| PUT    | `/api/admin/jobs/{id}/reject`    | Reject job listing   |
+
+### Applications
+| Method | Endpoint                              | Description                    |
+|--------|---------------------------------------|--------------------------------|
+| POST   | `/api/jobs/{id}/apply`                | Apply for a job (candidate)    |
+| DELETE | `/api/applications/{id}`              | Cancel application (candidate) |
+| GET    | `/api/candidate/applications`         | List own applications          |
+| GET    | `/api/employer/applications`          | List received applications     |
+| PUT    | `/api/applications/{id}/accept`       | Accept application (employer)  |
+| PUT    | `/api/applications/{id}/reject`       | Reject application (employer)  |
+
+### Comments
+| Method | Endpoint                    | Description                    |
+|--------|-----------------------------|--------------------------------|
+| GET    | `/api/jobs/{id}/comments`   | List comments for a job        |
+| POST   | `/api/jobs/{id}/comments`   | Add a comment                  |
+| DELETE | `/api/comments/{id}`        | Delete/hide comment            |
+
+### Payments & Notifications
+| Method | Endpoint                              | Description                      |
+|--------|---------------------------------------|----------------------------------|
+| POST   | `/api/payments/checkout`              | Initiate payment (employer)      |
+| POST   | `/api/payments/webhook`               | Stripe webhook                   |
+| GET    | `/api/notifications`                  | List notifications               |
+| GET    | `/api/notifications/unread-count`     | Unread notification count        |
+| PUT    | `/api/notifications/{id}/read`        | Mark notification as read        |
+| PUT    | `/api/notifications/read-all`         | Mark all notifications as read   |
+
+### Analytics
+| Method | Endpoint                          | Description                 |
+|--------|-----------------------------------|-----------------------------|
+| GET    | `/api/analytics/jobs`             | Employer job stats          |
+| GET    | `/api/admin/analytics/overview`   | Admin platform overview     |
+
+## Environment Variables
+
+Key variables (see `.env.example` for full list):
+
+| Variable              | Description                     |
+|-----------------------|---------------------------------|
+| `STRIPE_KEY`          | Stripe publishable key          |
+| `STRIPE_SECRET`       | Stripe secret key               |
+| `STRIPE_WEBHOOK_SECRET`| Stripe webhook signing secret  |
+| `PAYPAL_CLIENT_ID`    | PayPal client ID                |
+| `PAYPAL_CLIENT_SECRET`| PayPal client secret            |
+| `SANCTUM_STATEFUL_DOMAINS`| SPA domains for Sanctum    |
+
+## Running the Application
+
+```bash
+# Start the development server
+php artisan serve
+
+# Run queue worker (for notifications)
+php artisan queue:work
+```
+
+## Running Tests
+
+```bash
+php artisan test
+```
+
+## Project Structure
+
+- `app/Http/Controllers/Api/` — API controllers grouped by feature
+- `app/Http/Requests/` — Form request validation classes
+- `app/Http/Resources/` — API resource transformers
+- `app/Models/` — Eloquent models
+- `app/Policies/` — Authorization policies
+- `app/Notifications/` — Notification classes
+- `app/Http/Middleware/` — Role-based middleware
+- `database/migrations/` — Database migrations
+- `database/seeders/` — Database seeders
+- `routes/api.php` — All API route definitions
 
 ## License
 

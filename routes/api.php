@@ -10,6 +10,9 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\Employer\JobListingController as EmployerJobListingController;
 use App\Http\Controllers\Api\Admin\JobListingController as AdminJobListingController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\AnalyticsController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -65,4 +68,28 @@ Route::middleware('auth:sanctum')->group(function () {
     // Authenticated comment actions
     Route::post('/jobs/{id}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+
+    // Employer payment routes
+    Route::middleware('employer')->group(function () {
+        Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
+    });
+
+    // Notification routes (authenticated)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+    // Analytics routes
+    Route::middleware('employer')->group(function () {
+        Route::get('/analytics/jobs', [AnalyticsController::class, 'jobStats']);
+    });
+
+    // Admin analytics
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/analytics/overview', [AnalyticsController::class, 'platformOverview']);
+    });
 });
+
+// Public payment webhook (no auth)
+Route::post('/payments/webhook', [PaymentController::class, 'webhook']);
