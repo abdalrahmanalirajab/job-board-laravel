@@ -12,11 +12,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('employer_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('application_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('amount');
-            $table->string('currency', 3)->default('usd');
+            $table->decimal('amount', 10, 2);
+            $table->string('currency', 3)->default('USD');
             $table->string('provider')->default('stripe');
-            $table->string('provider_payment_id')->nullable();
-            $table->string('status')->default('pending');
+            $table->string('stripe_payment_intent_id')->nullable();
+            $table->string('stripe_client_secret')->nullable();
+            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
