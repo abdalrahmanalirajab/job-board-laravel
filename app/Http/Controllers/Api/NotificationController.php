@@ -8,56 +8,113 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    /**
+     * List authenticated user's notifications.
+     * Supports ?unread=true filter to return only unread notifications.
+     */
     public function index(Request $request)
     {
-        $notifications = $request->user()->notifications()->paginate(20);
+        try {
+            $query = $request->boolean('unread')
+                ? $request->user()->unreadNotifications()
+                : $request->user()->notifications();
 
-        return NotificationResource::collection($notifications)->additional([
-            'success' => true,
-            'message' => 'Notifications retrieved successfully.',
-        ]);
-    }
+            $notifications = $query->paginate(15);
 
-    public function unreadCount(Request $request)
-    {
-        return response()->json([
-            'success' => true,
-            'message' => 'Unread notifications count retrieved.',
-            'data' => [
-                'unread_count' => $request->user()->unreadNotifications()->count(),
-            ],
-        ]);
-    }
-
-    public function markAsRead(Request $request, $id)
-    {
-        $notification = $request->user()->notifications()->find($id);
-
-        if (!$notification) {
+            return NotificationResource::collection($notifications)->additional([
+                'success' => true,
+                'message' => 'Notifications retrieved successfully.',
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Notification not found.',
-                'data' => null,
-            ], 404);
+                'message' => 'Failed to retrieve notifications: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
         }
-
-        $notification->markAsRead();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification marked as read.',
-            'data' => new NotificationResource($notification),
-        ]);
     }
 
+    /**
+     * Return count of unread notifications for the authenticated user.
+     */
+    public function unreadCount(Request $request)
+    {
+        try {
+            $unreadCount = $request->user()->unreadNotifications()->count();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unread notifications count retrieved.',
+                'data'    => [
+                    'unread_count' => $unreadCount,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve unread count: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark a single notification as read by ID.
+     */
+    public function markAsRead(Request $request, $id)
+    {
+        try {
+            $notification = $request->user()->notifications()->find($id);
+
+            if (!$notification) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Notification not found.',
+                    'data'    => null,
+                ], 404);
+            }
+
+            $notification->markAsRead();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notification marked as read.',
+                'data'    => new NotificationResource($notification),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark notification as read: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Mark all unread notifications as read for the authenticated user.
+     */
     public function markAllAsRead(Request $request)
     {
-        $request->user()->unreadNotifications->markAsRead();
+        try {
+            $unread = $request->user()->unreadNotifications;
+            $count  = $unread->count();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications marked as read.',
-            'data' => null,
-        ]);
+            $unread->markAsRead();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All notifications marked as read.',
+                'data'    => [
+                    'message' => 'All notifications marked as read.',
+                    'count'   => $count,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to mark all notifications as read: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
+        }
     }
 }

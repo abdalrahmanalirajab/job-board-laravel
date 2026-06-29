@@ -10,17 +10,28 @@ class PaymentSeeder extends Seeder
 {
     public function run(): void
     {
-        $acceptedApplication = Application::where('status', 'accepted')->first();
+        $acceptedApplications = Application::where('status', 'accepted')
+            ->with('jobListing')
+            ->get();
 
-        if ($acceptedApplication) {
+        foreach ($acceptedApplications as $index => $application) {
+            // 70% completed, 30% pending
+            $isCompleted = ($index % 10) < 7;
+
+            $amount = $application->jobListing->salary_max
+                ? (float) $application->jobListing->salary_max
+                : 50.00;
+
             Payment::create([
-                'employer_id' => $acceptedApplication->jobListing->employer_id,
-                'application_id' => $acceptedApplication->id,
-                'amount' => 5000,
-                'currency' => 'usd',
-                'provider' => 'stripe',
-                'status' => 'completed',
-                'paid_at' => now(),
+                'employer_id'              => $application->jobListing->employer_id,
+                'application_id'           => $application->id,
+                'amount'                   => $amount,
+                'currency'                 => 'USD',
+                'provider'                 => 'stripe',
+                'stripe_payment_intent_id' => 'pi_test_' . uniqid(),
+                'stripe_client_secret'     => 'pi_test_secret_' . uniqid(),
+                'status'                   => $isCompleted ? 'completed' : 'pending',
+                'paid_at'                  => $isCompleted ? now() : null,
             ]);
         }
     }

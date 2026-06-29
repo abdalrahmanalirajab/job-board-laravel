@@ -27,11 +27,14 @@ Route::get('/jobs/{id}/comments', [CommentController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
+// Stripe webhook — NO auth middleware
+Route::post('/payments/stripe/webhook', [PaymentController::class, 'stripeWebhook']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
 
-    // profile routes 
+    // Profile routes
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
@@ -42,6 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/jobs/{id}', [EmployerJobListingController::class, 'show']);
         Route::put('/jobs/{id}', [EmployerJobListingController::class, 'update']);
         Route::delete('/jobs/{id}', [EmployerJobListingController::class, 'destroy']);
+
+        // Employer payments
+        Route::get('/payments', [PaymentController::class, 'myPayments']);
+
+        // Employer analytics
+        Route::get('/analytics', [AnalyticsController::class, 'overview']);
+        Route::get('/analytics/{id}', [AnalyticsController::class, 'jobStats']);
     });
 
     // Candidate routes
@@ -58,6 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/applications/{id}/reject', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'reject']);
     });
 
+    // Employer payment checkout (inside auth:sanctum + employer)
+    Route::middleware('employer')->group(function () {
+        Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
+    });
+
     // Admin routes
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/jobs', [AdminJobListingController::class, 'index']);
@@ -69,27 +84,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/jobs/{id}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
 
-    // Employer payment routes
-    Route::middleware('employer')->group(function () {
-        Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
-    });
-
     // Notification routes (authenticated)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-
-    // Analytics routes
-    Route::middleware('employer')->group(function () {
-        Route::get('/analytics/jobs', [AnalyticsController::class, 'jobStats']);
-    });
 
     // Admin analytics
     Route::middleware('admin')->group(function () {
         Route::get('/admin/analytics/overview', [AnalyticsController::class, 'platformOverview']);
     });
 });
-
-// Public payment webhook (no auth)
-Route::post('/payments/webhook', [PaymentController::class, 'webhook']);

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
+use App\Notifications\JobApproved;
+use App\Notifications\JobRejected;
 use Illuminate\Http\Request;
 
 class JobListingController extends Controller
@@ -55,6 +57,9 @@ class JobListingController extends Controller
             $jobListing->update(['status' => 'approved']);
             $jobListing->load(['category', 'technologies', 'employer']);
 
+            // Notify the employer
+            $jobListing->employer->notify(new JobApproved($jobListing));
+
             return (new JobListingResource($jobListing))->additional([
                 'success' => true,
                 'message' => 'Job listing approved successfully.',
@@ -86,6 +91,10 @@ class JobListingController extends Controller
             }
 
             $jobListing->update(['status' => 'rejected']);
+            $jobListing->load('employer');
+
+            // Notify the employer with optional reason
+            $jobListing->employer->notify(new JobRejected($jobListing, $request->input('reason')));
 
             return response()->json([
                 'success' => true,

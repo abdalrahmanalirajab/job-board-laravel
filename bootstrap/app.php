@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'candidate' => \App\Http\Middleware\EnsureIsCandidate::class,
             'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'api/payments/stripe/webhook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
