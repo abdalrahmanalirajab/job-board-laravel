@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Employer;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
+use App\Notifications\ApplicationAccepted;
+use App\Notifications\ApplicationRejected;
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
@@ -71,6 +73,8 @@ class ApplicationController extends Controller
 
         $application->update(['status' => 'accepted']);
 
+        $application->candidate->notify(new ApplicationAccepted($application));
+
         return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
             ->additional([
                 'success' => true,
@@ -109,6 +113,8 @@ class ApplicationController extends Controller
         }
 
         $application->update(['status' => 'rejected']);
+
+        $application->candidate->notify(new ApplicationRejected($application));
 
         return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
             ->additional([
