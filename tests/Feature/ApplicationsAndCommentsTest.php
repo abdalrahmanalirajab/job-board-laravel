@@ -110,7 +110,7 @@ class ApplicationsAndCommentsTest extends TestCase
                     'resume_url',
                     'applied_at',
                     'created_at',
-                    'job_listing',
+                    'job',
                     'candidate'
                 ]
             ]);

@@ -11,7 +11,7 @@ class ApplicationResource extends JsonResource
 {
   public function toArray(Request $request): array
   {
-    $jobListingData = $this->whenLoaded('jobListing', function () {
+    $jobData = $this->whenLoaded('jobListing', function () {
       $job = $this->jobListing;
       if (!$job) return null;
 
@@ -67,6 +67,8 @@ class ApplicationResource extends JsonResource
         'id' => $cand->id,
         'name' => $cand->name,
         'email' => $cand->email,
+        'phone' => $this->contact_phone,
+        'linkedin' => $profile ? $profile->linkedin_url : null,
         'profile' => [
           'bio' => $profile ? $profile->bio : null,
           'skills' => $profile ? $profile->skills : null,
@@ -75,15 +77,22 @@ class ApplicationResource extends JsonResource
       ];
     });
 
+    $resumeName = null;
+    if ($this->resume_path) {
+      $resumeName = 'CV_' . basename($this->resume_path);
+    }
+
     return [
       'id' => $this->id,
       'status' => $this->status,
       'contact_email' => $this->contact_email,
       'contact_phone' => $this->contact_phone,
       'resume_url' => $this->resume_path ? Storage::url($this->resume_path) : null,
+      'resume_name' => $resumeName,
       'applied_at' => $this->applied_at ? $this->applied_at->format('Y-m-d H:i:s') : null,
       'created_at' => $this->created_at,
-      'job_listing' => $jobListingData,
+      'rejection_reason' => $this->rejection_reason,
+      'job' => $jobData,
       'candidate' => $candidateData,
     ];
   }

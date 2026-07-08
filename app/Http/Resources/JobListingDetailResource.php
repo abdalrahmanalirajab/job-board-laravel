@@ -20,6 +20,7 @@ class JobListingDetailResource extends JsonResource
             'description' => $this->description,
             'responsibilities' => $this->responsibilities,
             'benefits' => $this->benefits,
+            'skills' => $this->skills_required ? array_map('trim', explode(',', $this->skills_required)) : [],
             'skills_required' => $this->skills_required,
             'applications_count' => class_exists('App\\Models\\Application')
                 ? (int) ($this->applications_count ?? ($this->relationLoaded('applications') ? $this->applications->count() : $this->applications()->count()))

@@ -60,14 +60,17 @@ class ApplicationController extends Controller
         $resumePath = null;
         if ($request->hasFile('resume')) {
             $resumePath = $request->file('resume')->store('resumes', 'public');
+        } elseif ($request->filled('resume_url')) {
+            // Accept resume_url from separate upload flow
+            $resumePath = $request->input('resume_url');
         }
 
         $application = Application::create([
             'job_listing_id' => $job->id,
             'candidate_id' => $request->user()->id,
             'resume_path' => $resumePath,
-            'contact_email' => $request->input('contact_email'),
-            'contact_phone' => $request->input('contact_phone'),
+            'contact_email' => $request->input('contact_email', $request->input('email')),
+            'contact_phone' => $request->input('contact_phone', $request->input('phone')),
             'status' => 'pending',
             'applied_at' => now(),
         ]);
