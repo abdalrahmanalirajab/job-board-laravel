@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\Employer\JobListingController as EmployerJobListingController;
 use App\Http\Controllers\Api\Admin\JobListingController as AdminJobListingController;
+use App\Http\Controllers\Api\Admin\AdminController;
+use App\Http\Controllers\Api\Employer\ApplicationController as EmployerApplicationController;
+use App\Http\Controllers\Api\Employer\CandidateController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
@@ -38,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
+    // Upload routes
+    Route::post('/uploads/resume', [\App\Http\Controllers\Api\UploadController::class, 'resume']);
+
     // Employer routes
     Route::middleware('employer')->prefix('employer')->group(function () {
         Route::get('/jobs', [EmployerJobListingController::class, 'index']);
@@ -52,6 +58,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Employer analytics
         Route::get('/analytics', [AnalyticsController::class, 'overview']);
         Route::get('/analytics/{id}', [AnalyticsController::class, 'jobStats']);
+
+        // Employer candidate search
+        Route::get('/candidates/search', [CandidateController::class, 'search']);
     });
 
     // Candidate routes
@@ -63,9 +72,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Employer application routes
     Route::middleware('employer')->group(function () {
-        Route::get('/employer/applications', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'index']);
-        Route::put('/applications/{id}/accept', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'accept']);
-        Route::put('/applications/{id}/reject', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'reject']);
+        Route::get('/employer/applications', [EmployerApplicationController::class, 'index']);
+        Route::put('/applications/{id}/accept', [EmployerApplicationController::class, 'accept']);
+        Route::put('/applications/{id}/reject', [EmployerApplicationController::class, 'reject']);
     });
 
     // Employer payment checkout (inside auth:sanctum + employer)
@@ -78,6 +87,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/jobs', [AdminJobListingController::class, 'index']);
         Route::put('/jobs/{id}/approve', [AdminJobListingController::class, 'approve']);
         Route::put('/jobs/{id}/reject', [AdminJobListingController::class, 'reject']);
+        Route::get('/users', [AdminController::class, 'users']);
+        Route::get('/comments', [AdminController::class, 'comments']);
+        Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
     });
 
     // Authenticated comment actions

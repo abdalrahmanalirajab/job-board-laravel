@@ -14,6 +14,7 @@ class Application extends Model
         'contact_phone',
         'status',
         'applied_at',
+        'rejection_reason',
     ];
 
     protected $casts = [

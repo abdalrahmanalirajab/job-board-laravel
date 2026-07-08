@@ -30,12 +30,23 @@ class CommentResource extends JsonResource
       ];
     });
 
+    $jobData = $this->whenLoaded('jobListing', function () {
+      $job = $this->jobListing;
+      if (!$job) return null;
+      return [
+        'id'    => $job->id,
+        'title' => $job->title,
+      ];
+    });
+
     return [
       'id' => $this->id,
       'body' => $this->body,
       'is_visible' => $this->is_visible,
       'created_at' => $this->created_at ? $this->created_at->format('Y-m-d H:i:s') : null,
       'author' => $authorData,
+      'job_post' => $jobData,
+      'user' => $authorData,
     ];
   }
 }

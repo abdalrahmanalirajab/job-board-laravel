@@ -104,7 +104,7 @@ class ApplicationController extends Controller
     /**
      * Reject a candidate application
      */
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
         try {
             $application = Application::find($id);
@@ -132,7 +132,11 @@ class ApplicationController extends Controller
                 ], 422);
             }
 
-            $application->update(['status' => 'rejected']);
+            $reason = $request->input('reason', $request->input('rejection_reason', ''));
+            $application->update([
+                'status' => 'rejected',
+                'rejection_reason' => $reason,
+            ]);
 
             // Load jobListing.employer so notification can access company name
             $application->load('jobListing.employer.employerProfile');

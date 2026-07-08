@@ -42,6 +42,16 @@ class AnalyticsController extends Controller
             $totalPayments = (clone $paymentsQuery)->count();
             $totalRevenue  = (clone $paymentsQuery)->sum('amount');
 
+            // Per-job stats for charts
+            $jobStats = (clone $jobsQuery)->withCount('applications')->get()->map(function ($job) {
+                return [
+                    'jobId'        => $job->id,
+                    'title'        => $job->title,
+                    'applications' => $job->applications_count,
+                    'status'       => $job->status,
+                ];
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'Analytics overview retrieved successfully.',
@@ -56,6 +66,8 @@ class AnalyticsController extends Controller
                     'rejected_applications' => $rejectedApplications,
                     'total_payments'        => $totalPayments,
                     'total_revenue'         => (float) $totalRevenue,
+                    'job_stats'             => $jobStats,
+                    'active_jobs'           => $approvedJobs,
                 ],
             ]);
         } catch (\Throwable $e) {
