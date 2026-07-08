@@ -8,23 +8,33 @@ use App\Http\Requests\UpdateJobListingRequest;
 use App\Http\Resources\JobListingDetailResource;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 
 class JobListingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $jobListings = JobListing::where('employer_id', Auth::id())
+            $query = JobListing::where('employer_id', Auth::id())
                 ->with(['category', 'technologies', 'employer.employerProfile'])
-                ->withCount('applications')
-                ->get();
+                ->withCount('applications');
 
-            return JobListingResource::collection($jobListings)->additional([
+            $perPage = $request->input('per_page', 10);
+            $jobListings = $query->latest()->paginate($perPage);
+
+            return response()->json([
                 'success' => true,
                 'message' => 'Your job listings retrieved successfully.',
+                'data'    => JobListingResource::collection($jobListings)->resolve(),
+                'meta'    => [
+                    'current_page' => $jobListings->currentPage(),
+                    'last_page'    => $jobListings->lastPage(),
+                    'total'        => $jobListings->total(),
+                    'per_page'     => $jobListings->perPage(),
+                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -43,9 +53,15 @@ class JobListingController extends Controller
                 $logoPath = $request->file('logo')->store('job-logos', 'public');
             }
 
-            $data = $request->safe()->except(['technologies', 'logo']);
+            $data = $request->safe()->except(['technologies', 'logo', 'skills']);
             $data['employer_id'] = Auth::id();
             $data['status']      = 'pending'; // Always pending — admin must approve
+
+            // Convert skills array to comma-separated string
+            if ($request->has('skills') && is_array($request->input('skills'))) {
+                $data['skills_required'] = implode(', ', $request->input('skills'));
+            }
+
             if ($logoPath !== null) {
                 $data['logo'] = $logoPath;
             }
@@ -133,7 +149,12 @@ class JobListingController extends Controller
                 ], 403);
             }
 
-            $data = $request->safe()->except(['technologies', 'logo']);
+            $data = $request->safe()->except(['technologies', 'logo', 'skills']);
+
+            // Convert skills array to comma-separated string
+            if ($request->has('skills') && is_array($request->input('skills'))) {
+                $data['skills_required'] = implode(', ', $request->input('skills'));
+            }
 
             // Reset to pending if previously rejected
             if ($jobListing->status === 'rejected') {
