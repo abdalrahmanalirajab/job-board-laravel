@@ -10,6 +10,9 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\Employer\JobListingController as EmployerJobListingController;
 use App\Http\Controllers\Api\Admin\JobListingController as AdminJobListingController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\AnalyticsController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -20,14 +23,18 @@ Route::post('/reset', [AuthController::class, 'reset'])->name('password.reset');
 // Public routes
 Route::get('/jobs', [JobListingController::class, 'index']);
 Route::get('/jobs/{id}', [JobListingController::class, 'show']);
-Route::get('/jobs/{job}/comments', [CommentController::class, 'index']);
+Route::get('/jobs/{id}/comments', [CommentController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
+// Stripe webhook — NO auth middleware
+Route::post('/payments/stripe/webhook', [PaymentController::class, 'stripeWebhook']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'me']);
 
-    // profile routes 
+    // Profile routes
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
@@ -38,20 +45,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/jobs/{id}', [EmployerJobListingController::class, 'show']);
         Route::put('/jobs/{id}', [EmployerJobListingController::class, 'update']);
         Route::delete('/jobs/{id}', [EmployerJobListingController::class, 'destroy']);
+
+        // Employer payments
+        Route::get('/payments', [PaymentController::class, 'myPayments']);
+
+        // Employer analytics
+        Route::get('/analytics', [AnalyticsController::class, 'overview']);
+        Route::get('/analytics/{id}', [AnalyticsController::class, 'jobStats']);
     });
 
     // Candidate routes
     Route::middleware('candidate')->group(function () {
-        Route::post('/jobs/{job}/apply', [ApplicationController::class, 'apply']);
-        Route::delete('/applications/{application}', [ApplicationController::class, 'cancel']);
-        Route::get('/candidate/applications', [ApplicationController::class, 'candidateApplications']);
+        Route::post('/jobs/{id}/apply', [ApplicationController::class, 'store']);
+        Route::delete('/applications/{id}', [ApplicationController::class, 'destroy']);
+        Route::get('/candidate/applications', [ApplicationController::class, 'myApplications']);
     });
 
     // Employer application routes
     Route::middleware('employer')->group(function () {
-        Route::get('/employer/applications', [ApplicationController::class, 'employerApplications']);
-        Route::put('/applications/{application}/accept', [ApplicationController::class, 'accept']);
-        Route::put('/applications/{application}/reject', [ApplicationController::class, 'reject']);
+        Route::get('/employer/applications', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'index']);
+        Route::put('/applications/{id}/accept', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'accept']);
+        Route::put('/applications/{id}/reject', [\App\Http\Controllers\Api\Employer\ApplicationController::class, 'reject']);
+    });
+
+    // Employer payment checkout (inside auth:sanctum + employer)
+    Route::middleware('employer')->group(function () {
+        Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
     });
 
     // Admin routes
@@ -62,6 +81,17 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Authenticated comment actions
-    Route::post('/jobs/{job}/comments', [CommentController::class, 'store']);
-    Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+    Route::post('/jobs/{id}/comments', [CommentController::class, 'store']);
+    Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+
+    // Notification routes (authenticated)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+    // Admin analytics
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/analytics/overview', [AnalyticsController::class, 'platformOverview']);
+    });
 });

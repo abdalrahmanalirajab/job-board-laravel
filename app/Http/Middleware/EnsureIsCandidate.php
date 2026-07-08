@@ -6,14 +6,17 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class EnsureIsCandidate
 {
+    /**
+     * Handle an incoming request.
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || ! $request->user()->isAdmin()) {
+        if (!$request->user() || !$request->user()->isCandidate()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Forbidden. Admin access required.'
+                'message' => 'Unauthorized. Access denied.',
             ], 403);
         }
 

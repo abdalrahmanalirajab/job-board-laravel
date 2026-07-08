@@ -15,10 +15,10 @@ return new class extends Migration {
             $table->foreignId('job_listing_id')->constrained()->cascadeOnDelete();
             $table->foreignId('candidate_id')->constrained('users')->cascadeOnDelete();
             $table->string('resume_path')->nullable();
-            $table->string('contact_email');
+            $table->string('contact_email')->nullable();
             $table->string('contact_phone')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
-            $table->timestamp('applied_at')->useCurrent();
+            $table->timestamp('applied_at')->nullable();
             $table->timestamps();
 
             // Prevent duplicate applications (one per candidate per job)

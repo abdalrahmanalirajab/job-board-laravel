@@ -11,7 +11,6 @@ class ApplicationSeeder extends Seeder
 {
   public function run(): void
   {
-    // Get or create a candidate
     $candidate = User::where('email', 'candidate@jobboard.com')->first();
 
     if (!$candidate) {
@@ -25,26 +24,29 @@ class ApplicationSeeder extends Seeder
         'resume_path' => null,
         'linkedin_url' => 'https://linkedin.com/in/democandidate',
         'bio' => 'A demo candidate looking for exciting opportunities.',
-        'skills' => 'PHP, Laravel, Vue.js, MySQL, Git',
+        'skills' => ['PHP', 'Laravel', 'Vue.js', 'MySQL', 'Git'],
       ]);
     }
 
-    // Get approved jobs
     $approvedJobs = JobListing::where('status', 'approved')->get();
 
-    if ($approvedJobs->isEmpty()) {
+    if ($approvedJobs->count() < 10) {
       return;
     }
 
-    // Create some applications
-    $statuses = ['pending', 'pending', 'accepted', 'rejected'];
+    // Mix of statuses: 5 pending, 3 accepted, 2 rejected
+    $statuses = [
+      'pending', 'pending', 'pending', 'pending', 'pending',
+      'accepted', 'accepted', 'accepted',
+      'rejected', 'rejected'
+    ];
 
-    foreach ($approvedJobs->take(4) as $index => $job) {
+    foreach ($approvedJobs->take(10) as $index => $job) {
       Application::create([
         'job_listing_id' => $job->id,
         'candidate_id' => $candidate->id,
-        'resume_path' => null,
-        'contact_email' => $candidate->email,
+        'resume_path' => $index % 2 !== 0 ? 'resumes/dummy_resume.pdf' : null,
+        'contact_email' => $index % 2 === 0 ? $candidate->email : null,
         'contact_phone' => '01012345678',
         'status' => $statuses[$index],
         'applied_at' => now()->subDays(rand(1, 10)),
