@@ -41,10 +41,13 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
-        // 1. Update core User data (name, avatar)
+        // 1. Update core User data (name, phone, avatar)
         $userData = [];
         if ($request->has('name')) {
             $userData['name'] = $request->input('name');
+        }
+        if ($request->has('phone')) {
+            $userData['phone'] = $request->input('phone');
         }
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {

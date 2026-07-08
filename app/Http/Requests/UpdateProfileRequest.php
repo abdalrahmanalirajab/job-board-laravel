@@ -22,6 +22,7 @@ class UpdateProfileRequest extends FormRequest
 
         $rules = [
             'name' => ['sometimes', 'string', 'max:255'],
+            'phone' => ['sometimes', 'string', 'max:20'],
             'avatar' => ['sometimes', 'image', 'max:2048'],
         ];
 
@@ -39,7 +40,7 @@ class UpdateProfileRequest extends FormRequest
             $rules['bio'] = ['sometimes', 'string'];
             $rules['phone'] = ['sometimes', 'string', 'max:20'];
             $rules['skills'] = ['sometimes', 'array'];
-            $rules['skills.*'] = ['string', 'max:100'];
+            $rules['skills.*'] = ['string', 'max:255'];
             $rules['resume'] = ['sometimes', 'file', 'mimes:pdf', 'max:5120'];
         }
 
