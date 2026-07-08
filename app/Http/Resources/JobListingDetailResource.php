@@ -19,6 +19,7 @@ class JobListingDetailResource extends JsonResource
         return array_merge($base, [
             'description' => $this->description,
             'responsibilities' => $this->responsibilities,
+            'benefits' => $this->benefits,
             'skills_required' => $this->skills_required,
             'applications_count' => class_exists('App\\Models\\Application')
                 ? (int) ($this->applications_count ?? ($this->relationLoaded('applications') ? $this->applications->count() : $this->applications()->count()))

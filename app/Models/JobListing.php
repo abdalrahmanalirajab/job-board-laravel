@@ -12,6 +12,7 @@ class JobListing extends Model
         'title',
         'description',
         'responsibilities',
+        'benefits',
         'skills_required',
         'salary_min',
         'salary_max',
@@ -30,6 +31,22 @@ class JobListing extends Model
             'salary_min' => 'integer',
             'salary_max' => 'integer',
         ];
+    }
+
+    public function getSkillsAttribute()
+    {
+        return $this->skills_required
+            ? array_map('trim', explode(',', $this->skills_required))
+            : [];
+    }
+
+    public function setSkillsRequiredAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['skills_required'] = implode(', ', $value);
+        } else {
+            $this->attributes['skills_required'] = $value;
+        }
     }
 
     // Relationships

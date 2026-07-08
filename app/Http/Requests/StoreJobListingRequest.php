@@ -21,6 +21,7 @@ class StoreJobListingRequest extends FormRequest
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'responsibilities' => 'required|string',
+            'benefits' => 'nullable|string',
             'skills_required' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'location' => 'required|string|max:255',

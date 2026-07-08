@@ -71,6 +71,7 @@ class JobListingResource extends JsonResource
             'created_at' => $this->created_at,
             'category' => $category,
             'technologies' => $technologies,
+            'skills' => $this->skills,
             'employer' => $employer,
         ];
     }
