@@ -22,6 +22,7 @@ class UpdateProfileRequest extends FormRequest
 
         $rules = [
             'name' => ['sometimes', 'string', 'max:255'],
+            'phone' => ['sometimes', 'string', 'max:20'],
             'avatar' => ['sometimes', 'image', 'max:2048'],
         ];
 
@@ -37,7 +38,8 @@ class UpdateProfileRequest extends FormRequest
         if ($user && $user->isCandidate()) {
             $rules['linkedin_url'] = ['sometimes', 'url'];
             $rules['bio'] = ['sometimes', 'string'];
-            $rules['skills'] = ['sometimes', 'string'];
+            $rules['skills'] = ['sometimes', 'array'];
+            $rules['skills.*'] = ['string', 'max:255'];
             $rules['resume'] = ['sometimes', 'file', 'mimes:pdf', 'max:5120'];
         }
 
