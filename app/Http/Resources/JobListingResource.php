@@ -60,6 +60,7 @@ class JobListingResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'description' => $this->description,
             'location' => $this->location,
             'work_type' => $this->work_type,
             'experience_level' => $this->experience_level,
