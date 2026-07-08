@@ -20,6 +20,7 @@ class JobListing extends Model
         'work_type',
         'experience_level',
         'status',
+        'rejection_reason',
         'deadline',
         'logo',
     ];
