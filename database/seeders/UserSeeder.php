@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     {
         // 1. Create Employer User and profile
         $employer = User::updateOrCreate(
-            ['email' => 'employer@jobboard.com'],
+            ['email' => 'employer@test.com'],
             [
                 'name' => 'Demo Employer',
                 'password' => Hash::make('password'),
@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
 
         // 2. Create Candidate User and profile
         $candidate = User::updateOrCreate(
-            ['email' => 'candidate@jobboard.com'],
+            ['email' => 'candidate@test.com'],
             [
                 'name' => 'Demo Candidate',
                 'password' => Hash::make('password'),

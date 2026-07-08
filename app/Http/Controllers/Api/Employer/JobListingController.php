@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Employer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreJobListingRequest;
 use App\Http\Requests\UpdateJobListingRequest;
+use App\Http\Resources\JobListingDetailResource;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,8 @@ class JobListingController extends Controller
     {
         try {
             $jobListings = JobListing::where('employer_id', Auth::id())
-                ->with(['category', 'technologies'])
+                ->with(['category', 'technologies', 'employer.employerProfile'])
+                ->withCount('applications')
                 ->get();
 
             return JobListingResource::collection($jobListings)->additional([
@@ -56,7 +58,7 @@ class JobListingController extends Controller
                 }
             }
 
-            $jobListing->load(['category', 'technologies']);
+            $jobListing->load(['category', 'technologies', 'employer.employerProfile']);
 
             return (new JobListingResource($jobListing))
                 ->additional([
@@ -77,7 +79,9 @@ class JobListingController extends Controller
     public function show($id)
     {
         try {
-            $jobListing = JobListing::with(['category', 'technologies'])->find($id);
+            $jobListing = JobListing::with(['category', 'technologies', 'employer.employerProfile'])
+                ->withCount('applications')
+                ->find($id);
 
             if (!$jobListing) {
                 return response()->json([
@@ -95,7 +99,7 @@ class JobListingController extends Controller
                 ], 403);
             }
 
-            return (new JobListingResource($jobListing))->additional([
+            return (new JobListingDetailResource($jobListing))->additional([
                 'success' => true,
                 'message' => 'Job listing retrieved successfully.',
             ]);
@@ -154,7 +158,7 @@ class JobListingController extends Controller
                 }
             }
 
-            $jobListing->load(['category', 'technologies']);
+            $jobListing->load(['category', 'technologies', 'employer.employerProfile']);
 
             return (new JobListingResource($jobListing))->additional([
                 'success' => true,

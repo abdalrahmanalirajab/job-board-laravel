@@ -60,18 +60,21 @@ class JobListingResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'description' => $this->description,
             'location' => $this->location,
             'work_type' => $this->work_type,
             'experience_level' => $this->experience_level,
             'salary_min' => $this->salary_min,
             'salary_max' => $this->salary_max,
             'status' => $this->status,
+            'rejection_reason' => $this->rejection_reason,
             'deadline' => $this->deadline?->toDateString(),
             'logo' => $logoUrl,
             'created_at' => $this->created_at,
             'category' => $category,
             'technologies' => $technologies,
             'skills' => $this->skills,
+            'applications_count' => (int) ($this->applications_count ?? $this->applications()->count()),
             'employer' => $employer,
         ];
     }

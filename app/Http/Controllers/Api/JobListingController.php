@@ -45,7 +45,7 @@ class JobListingController extends Controller
                 default       => $query->latest(),
             };
 
-            $query->with(['category', 'technologies', 'employer.employerProfile']);
+            $query->with(['category', 'technologies', 'employer.employerProfile'])->withCount('applications');
 
             $jobListings = $query->paginate(10);
 

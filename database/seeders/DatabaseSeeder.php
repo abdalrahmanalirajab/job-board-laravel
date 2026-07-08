@@ -16,9 +16,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             JobListingSeeder::class,
-            ApplicationSeeder::class,
-            CommentSeeder::class,
-            PaymentSeeder::class,
+            // ApplicationSeeder::class,
+            // CommentSeeder::class,
+            // PaymentSeeder::class,
         ]);
     }
 }

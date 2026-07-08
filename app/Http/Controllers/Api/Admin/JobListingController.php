@@ -24,7 +24,7 @@ class JobListingController extends Controller
                 $query->where('employer_id', $request->input('employer_id'));
             }
 
-            $query->with(['category', 'technologies', 'employer'])->latest();
+            $query->with(['category', 'technologies', 'employer.employerProfile'])->withCount('applications')->latest();
 
             $jobListings = $query->paginate(15);
 
@@ -55,7 +55,7 @@ class JobListingController extends Controller
             }
 
             $jobListing->update(['status' => 'approved']);
-            $jobListing->load(['category', 'technologies', 'employer']);
+            $jobListing->load(['category', 'technologies', 'employer.employerProfile']);
 
             // Notify the employer
             $jobListing->employer->notify(new JobApproved($jobListing));
@@ -90,7 +90,10 @@ class JobListingController extends Controller
                 ], 404);
             }
 
-            $jobListing->update(['status' => 'rejected']);
+            $jobListing->update([
+                'status' => 'rejected',
+                'rejection_reason' => $request->input('reason'),
+            ]);
             $jobListing->load('employer');
 
             // Notify the employer with optional reason
