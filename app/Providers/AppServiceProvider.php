@@ -24,8 +24,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Auth\Notifications\ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
-            return env('FRONTEND_URL', 'http://localhost:3000') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
+        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $url = env('FRONTEND_URL', 'http://localhost:3000') . '/reset-password?token=' . $token . '&email=' . $notifiable->getEmailForPasswordReset();
+
+            return (new \Illuminate\Notifications\Messages\MailMessage)
+                ->subject('Reset Your Password')
+                ->greeting('Hello!')
+                ->line('You are receiving this email because we received a password reset request for your account.')
+                ->action('Reset Password', $url)
+                ->line('If you did not request a password reset, no further action is required.')
+                ->line('Thank you for using our application!');
         });
         Gate::policy(Application::class, ApplicationPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
