@@ -21,6 +21,7 @@ class UpdateJobListingRequest extends FormRequest
             'title' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|required|string',
             'responsibilities' => 'sometimes|required|string',
+            'benefits' => 'sometimes|nullable|string',
             'skills_required' => 'sometimes|required|string',
             'category_id' => 'sometimes|required|exists:categories,id',
             'location' => 'sometimes|required|string|max:255',
