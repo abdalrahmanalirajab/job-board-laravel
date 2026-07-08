@@ -90,8 +90,11 @@ class ProfileController extends Controller
             if ($request->has('bio')) {
                 $candidateData['bio'] = $request->input('bio');
             }
+            if ($request->has('phone')) {
+                $candidateData['phone'] = $request->input('phone');
+            }
             if ($request->has('skills')) {
-                $candidateData['skills'] = array_map('trim', explode(',', $request->input('skills')));
+                $candidateData['skills'] = $request->input('skills');
             }
             if ($request->hasFile('resume')) {
                 if ($user->candidateProfile && $user->candidateProfile->resume_path) {

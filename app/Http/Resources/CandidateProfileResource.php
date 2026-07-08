@@ -18,6 +18,7 @@ class CandidateProfileResource extends JsonResource
             'resume_path' => $this->resume_path ? asset(Storage::url($this->resume_path)) : null,
             'linkedin_url' => $this->linkedin_url,
             'bio' => $this->bio,
+            'phone' => $this->phone,
             'skills' => $this->skills,
         ];
     }

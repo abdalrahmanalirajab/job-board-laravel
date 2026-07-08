@@ -46,6 +46,7 @@ class UserSeeder extends Seeder
             ['user_id' => $candidate->id],
             [
                 'bio' => 'A demo candidate looking for exciting opportunities.',
+                'phone' => '+20 100 000 0000',
                 'skills' => ['PHP', 'Laravel', 'Vue.js', 'MySQL', 'Git'],
             ]
         );

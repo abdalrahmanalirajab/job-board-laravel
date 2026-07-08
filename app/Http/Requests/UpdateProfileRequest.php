@@ -37,7 +37,9 @@ class UpdateProfileRequest extends FormRequest
         if ($user && $user->isCandidate()) {
             $rules['linkedin_url'] = ['sometimes', 'url'];
             $rules['bio'] = ['sometimes', 'string'];
-            $rules['skills'] = ['sometimes', 'string'];
+            $rules['phone'] = ['sometimes', 'string', 'max:20'];
+            $rules['skills'] = ['sometimes', 'array'];
+            $rules['skills.*'] = ['string', 'max:100'];
             $rules['resume'] = ['sometimes', 'file', 'mimes:pdf', 'max:5120'];
         }
 

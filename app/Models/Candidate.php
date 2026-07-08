@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Candidate extends Model
 {
-    protected $fillable = ['user_id', 'resume_path', 'linkedin_url', 'bio', 'skills'];
+    protected $fillable = ['user_id', 'resume_path', 'linkedin_url', 'bio', 'phone', 'skills'];
 
     // handles json and store it as array in db
     protected $casts = [
