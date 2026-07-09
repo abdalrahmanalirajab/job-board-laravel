@@ -13,12 +13,12 @@ class JobListingSeeder extends Seeder
     public function run(): void
     {
         // Resolve employer — use Member 1's user if exists, otherwise create a fallback
-        $employer = User::where('email', 'employer@jobboard.com')->first();
+        $employer = User::where('email', 'employer@test.com')->first();
 
         if (!$employer) {
             $employer = User::create([
                 'name'     => 'Demo Employer',
-                'email'    => 'employer@jobboard.com',
+                'email'    => 'employer@test.com',
                 'password' => Hash::make('password'),
                 'role'     => 'employer',
             ]);

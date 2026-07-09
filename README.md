@@ -73,9 +73,9 @@ php artisan serve
 
 | Role      | Email                  | Password |
 |-----------|------------------------|----------|
-| Admin     | admin@jobboard.com     | password |
-| Employer  | employer@jobboard.com  | password |
-| Candidate | candidate@jobboard.com | password |
+| Admin     | admin@test.com     | password |
+| Employer  | employer@test.com  | password |
+| Candidate | candidate@test.com | password |
 
 ---
 

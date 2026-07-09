@@ -11,8 +11,8 @@ class CommentSeeder extends Seeder
 {
   public function run(): void
   {
-    $employer = User::where('email', 'employer@jobboard.com')->first();
-    $candidate = User::where('email', 'candidate@jobboard.com')->first();
+    $employer = User::where('email', 'employer@test.com')->first();
+    $candidate = User::where('email', 'candidate@test.com')->first();
     $approvedJobs = JobListing::where('status', 'approved')->get();
 
     if ($approvedJobs->isEmpty()) {

@@ -11,12 +11,12 @@ class ApplicationSeeder extends Seeder
 {
   public function run(): void
   {
-    $candidate = User::where('email', 'candidate@jobboard.com')->first();
+    $candidate = User::where('email', 'candidate@test.com')->first();
 
     if (!$candidate) {
       $candidate = User::create([
         'name' => 'Demo Candidate',
-        'email' => 'candidate@jobboard.com',
+        'email' => 'candidate@test.com',
         'password' => bcrypt('password'),
         'role' => 'candidate',
       ]);
