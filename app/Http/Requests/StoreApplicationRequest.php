@@ -14,13 +14,13 @@ class StoreApplicationRequest extends FormRequest
   public function rules(): array
   {
     return [
-      'resume' => 'nullable|file|mimes:pdf|max:5120',
+      'resume' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
       'resume_url' => 'nullable|string|max:2048',
       'resume_name' => 'nullable|string|max:255',
       'contact_email' => 'nullable|email',
-      'contact_phone' => 'nullable|string|max:20',
+      'contact_phone' => 'nullable|string|regex:/^[0-9+\-\(\)\s]{7,20}$/|max:20',
       'email' => 'nullable|email',
-      'phone' => 'nullable|string|max:20',
+      'phone' => 'nullable|string|regex:/^[0-9+\-\(\)\s]{7,20}$/|max:20',
       'linkedin' => 'nullable|string|max:255',
     ];
   }
@@ -41,7 +41,7 @@ class StoreApplicationRequest extends FormRequest
   {
     return [
       'resume.max' => 'The resume file must not be larger than 5MB.',
-      'resume.mimes' => 'The resume must be a PDF file.',
+      'resume.mimes' => 'The resume must be a PDF, DOC, or DOCX file.',
     ];
   }
 }

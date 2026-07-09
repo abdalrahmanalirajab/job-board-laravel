@@ -10,6 +10,7 @@ class Application extends Model
         'job_listing_id',
         'candidate_id',
         'resume_path',
+        'resume_name',
         'contact_email',
         'contact_phone',
         'status',
