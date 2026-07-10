@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ApplicationSeeder::class,
             CommentSeeder::class,
             PaymentSeeder::class,
+            NotificationSeeder::class,
         ]);
     }
 }

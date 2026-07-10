@@ -7,6 +7,8 @@ use App\Http\Resources\PaymentResource;
 use App\Models\Application;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Webhook;
@@ -120,7 +122,6 @@ class PaymentController extends Controller
 
     /**
      * Handle Stripe webhook events.
-     * Route must have NO auth middleware.
      */
     public function stripeWebhook(Request $request)
     {
@@ -134,44 +135,166 @@ class PaymentController extends Controller
                 config('services.stripe.webhook_secret')
             );
         } catch (SignatureVerificationException $e) {
+            Log::warning('Stripe webhook: signature verification failed', [
+                'error' => $e->getMessage(),
+            ]);
             return response()->json(['error' => 'Invalid signature'], 400);
         } catch (\UnexpectedValueException $e) {
+            Log::warning('Stripe webhook: invalid payload', [
+                'error' => $e->getMessage(),
+            ]);
             return response()->json(['error' => 'Invalid payload'], 400);
         }
 
+        $eventId   = $event->id;
+        $eventType = $event->type;
+
+        Log::info('Stripe webhook received', [
+            'event_id'   => $eventId,
+            'event_type' => $eventType,
+        ]);
+
         try {
-            $type = $event->type;
+            DB::beginTransaction();
 
-            switch ($type) {
-                case 'payment_intent.succeeded':
-                    $paymentIntentId = $event->data->object->id;
-                    $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)->first();
-                    if ($payment) {
-                        $payment->update([
-                            'status'  => 'completed',
-                            'paid_at' => now(),
-                        ]);
-                    }
-                    break;
+            match ($eventType) {
+                'payment_intent.succeeded' => $this->handlePaymentIntentSucceeded($event, $eventId),
+                'payment_intent.payment_failed' => $this->handlePaymentIntentFailed($event, $eventId),
+                'checkout.session.completed' => $this->handleCheckoutSessionCompleted($event, $eventId),
+                default => Log::info('Stripe webhook: unhandled event type', [
+                    'event_type' => $eventType,
+                    'event_id'   => $eventId,
+                ]),
+            };
 
-                case 'payment_intent.payment_failed':
-                    $paymentIntentId = $event->data->object->id;
-                    $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)->first();
-                    if ($payment) {
-                        $payment->update([
-                            'status' => 'failed',
-                        ]);
-                    }
-                    break;
-            }
+            DB::commit();
 
             return response()->json(['received' => true], 200);
         } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Webhook handling failed: ' . $e->getMessage(),
-            ], 500);
+            DB::rollBack();
+
+            Log::error('Stripe webhook: processing failed', [
+                'event_id'   => $eventId,
+                'event_type' => $eventType,
+                'error'      => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => 'Webhook processing failed'], 500);
         }
+    }
+
+    private function handlePaymentIntentSucceeded(mixed $event, string $eventId): void
+    {
+        $paymentIntent = $event->data->object;
+        $payment = Payment::where('stripe_payment_intent_id', $paymentIntent->id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$payment) {
+            Log::warning('Stripe webhook: payment_intent.succeeded - no matching payment', [
+                'stripe_payment_intent_id' => $paymentIntent->id,
+                'event_id'                 => $eventId,
+            ]);
+            return;
+        }
+
+        if ($payment->status === 'completed') {
+            Log::info('Stripe webhook: payment_intent.succeeded - already completed', [
+                'payment_id' => $payment->id,
+                'event_id'   => $eventId,
+            ]);
+            return;
+        }
+
+        $payment->update([
+            'status'  => 'completed',
+            'paid_at' => now(),
+        ]);
+
+        Log::info('Stripe webhook: payment completed', [
+            'payment_id'               => $payment->id,
+            'stripe_payment_intent_id' => $paymentIntent->id,
+            'event_id'                 => $eventId,
+        ]);
+    }
+
+    private function handlePaymentIntentFailed(mixed $event, string $eventId): void
+    {
+        $paymentIntent = $event->data->object;
+        $payment = Payment::where('stripe_payment_intent_id', $paymentIntent->id)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$payment) {
+            Log::warning('Stripe webhook: payment_intent.payment_failed - no matching payment', [
+                'stripe_payment_intent_id' => $paymentIntent->id,
+                'event_id'                 => $eventId,
+            ]);
+            return;
+        }
+
+        if ($payment->status === 'failed') {
+            Log::info('Stripe webhook: payment_intent.payment_failed - already failed', [
+                'payment_id' => $payment->id,
+                'event_id'   => $eventId,
+            ]);
+            return;
+        }
+
+        $payment->update(['status' => 'failed']);
+
+        Log::info('Stripe webhook: payment marked as failed', [
+            'payment_id'               => $payment->id,
+            'stripe_payment_intent_id' => $paymentIntent->id,
+            'event_id'                 => $eventId,
+        ]);
+    }
+
+    private function handleCheckoutSessionCompleted(mixed $event, string $eventId): void
+    {
+        $session = $event->data->object;
+        $paymentIntentId = $session->payment_intent ?? null;
+
+        if (!$paymentIntentId) {
+            Log::warning('Stripe webhook: checkout.session.completed - no payment_intent in session', [
+                'session_id' => $session->id,
+                'event_id'   => $eventId,
+            ]);
+            return;
+        }
+
+        $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$payment) {
+            Log::warning('Stripe webhook: checkout.session.completed - no matching payment', [
+                'stripe_payment_intent_id' => $paymentIntentId,
+                'session_id'               => $session->id,
+                'event_id'                 => $eventId,
+            ]);
+            return;
+        }
+
+        if ($payment->status === 'completed') {
+            Log::info('Stripe webhook: checkout.session.completed - already completed', [
+                'payment_id' => $payment->id,
+                'event_id'   => $eventId,
+            ]);
+            return;
+        }
+
+        $payment->update([
+            'status'  => 'completed',
+            'paid_at' => now(),
+        ]);
+
+        Log::info('Stripe webhook: checkout session completed', [
+            'payment_id'               => $payment->id,
+            'session_id'               => $session->id,
+            'stripe_payment_intent_id' => $paymentIntentId,
+            'event_id'                 => $eventId,
+        ]);
     }
 
     /**

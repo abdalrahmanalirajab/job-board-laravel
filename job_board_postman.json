@@ -1,808 +1,1450 @@
 {
-  "info": {
-    "name": "Job Board Platform - Full API",
-    "description": "Complete API collection for Job Board Platform (Laravel 13 + Sanctum)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" },
-    { "key": "employer_token", "value": "", "type": "string" },
-    { "key": "candidate_token", "value": "", "type": "string" },
-    { "key": "admin_token", "value": "", "type": "string" },
-    { "key": "job_id", "value": "1", "type": "string" },
-    { "key": "application_id", "value": "1", "type": "string" },
-    { "key": "comment_id", "value": "1", "type": "string" },
-    { "key": "category_id", "value": "1", "type": "string" }
-  ],
-  "item": [
-
-    {
-      "name": "🔐 AUTH",
-      "item": [
-        {
-          "name": "Register as Employer",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Ahmed Employer\",\n  \"email\": \"ahmed.employer@test.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"employer\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Register as Candidate",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Sara Candidate\",\n  \"email\": \"sara.candidate@test.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"candidate\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Register with invalid role (should fail)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/register", "host": ["{{base_url}}"], "path": ["api", "register"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Hacker\",\n  \"email\": \"hacker@test.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"admin\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Login as Employer",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.token) {",
-                  "  pm.collectionVariables.set('employer_token', json.data.token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"employer@jobboard.com\",\n  \"password\": \"password\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Login as Candidate",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.token) {",
-                  "  pm.collectionVariables.set('candidate_token', json.data.token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"candidate@jobboard.com\",\n  \"password\": \"password\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Login as Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.token) {",
-                  "  pm.collectionVariables.set('admin_token', json.data.token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@jobboard.com\",\n  \"password\": \"password\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Login with wrong password (should fail 401)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@jobboard.com\",\n  \"password\": \"wrongpassword\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Get Current User (me)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/user", "host": ["{{base_url}}"], "path": ["api", "user"] }
-          }
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
-          }
-        }
-      ]
+    "info": {
+        "name": "Job Board Platform - Full API",
+        "description": "Complete API collection for Job Board Platform (Laravel 13 + Sanctum)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000",
+            "type": "string"
+        },
+        { "key": "employer_token", "value": "", "type": "string" },
+        { "key": "candidate_token", "value": "", "type": "string" },
+        { "key": "admin_token", "value": "", "type": "string" },
+        { "key": "job_id", "value": "1", "type": "string" },
+        { "key": "application_id", "value": "1", "type": "string" },
+        { "key": "comment_id", "value": "1", "type": "string" },
+        { "key": "category_id", "value": "1", "type": "string" }
+    ],
+    "item": [
+        {
+            "name": "🔐 AUTH",
+            "item": [
+                {
+                    "name": "Register as Employer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "register"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Ahmed Employer\",\n  \"email\": \"ahmed.employer@test.com\",\n  \"password\": \"password\",\n  \"company_name\": \"Tech Solutions Inc\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"employer\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Register as Candidate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "register"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Sara Candidate\",\n  \"email\": \"sara.candidate@test.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"candidate\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Register with invalid role (should fail)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/register",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "register"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Hacker\",\n  \"email\": \"hacker@test.com\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"role\": \"admin\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login as Employer",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.token) {",
+                                    "  pm.collectionVariables.set('employer_token', json.data.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "login"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"employer@jobboard.com\",\n  \"password\": \"password\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login as Candidate",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.token) {",
+                                    "  pm.collectionVariables.set('candidate_token', json.data.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "login"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"candidate@jobboard.com\",\n  \"password\": \"password\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login as Admin",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.token) {",
+                                    "  pm.collectionVariables.set('admin_token', json.data.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "login"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@jobboard.com\",\n  \"password\": \"password\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Login with wrong password (should fail 401)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "login"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"admin@jobboard.com\",\n  \"password\": \"wrongpassword\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Current User (me)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/user",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "user"]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/logout",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "logout"]
+                        }
+                    }
+                }
+            ]
+        },
 
-    {
-      "name": "👤 PROFILE",
-      "item": [
         {
-          "name": "Get My Profile (Employer)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] }
-          }
+            "name": "👤 PROFILE",
+            "item": [
+                {
+                    "name": "Get My Profile (Employer)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/profile",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "profile"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get My Profile (Candidate)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/profile",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "profile"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Employer Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/profile",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "profile"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company_name\": \"Tech Solutions Egypt\",\n  \"website\": \"https://techsolutions.eg\",\n  \"description\": \"Leading tech company in Egypt\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Update Candidate Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/profile",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "profile"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"bio\": \"Experienced Laravel developer with 3 years of experience\",\n  \"linkedin_url\": \"https://linkedin.com/in/sara-candidate\",\n  \"skills\": \"Laravel, Vue.js, MySQL, REST APIs\"\n}"
+                        }
+                    }
+                }
+            ]
         },
+
         {
-          "name": "Get My Profile (Candidate)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] }
-          }
+            "name": "📋 CATEGORIES (Public)",
+            "item": [
+                {
+                    "name": "Get All Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/categories",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "categories"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Single Category",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/categories/{{category_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "categories", "{{category_id}}"]
+                        }
+                    }
+                }
+            ]
         },
+
         {
-          "name": "Update Employer Profile",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"company_name\": \"Tech Solutions Egypt\",\n  \"website\": \"https://techsolutions.eg\",\n  \"description\": \"Leading tech company in Egypt\"\n}"
-            }
-          }
+            "name": "💼 JOBS (Public)",
+            "item": [
+                {
+                    "name": "Get All Approved Jobs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"]
+                        }
+                    }
+                },
+                {
+                    "name": "Search Jobs by Keyword",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?search=laravel",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [{ "key": "search", "value": "laravel" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Category",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?category_id=1",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [{ "key": "category_id", "value": "1" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Work Type (remote)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?work_type=remote",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [{ "key": "work_type", "value": "remote" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Location",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?location=Cairo",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [{ "key": "location", "value": "Cairo" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Experience Level",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?experience_level=senior",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [
+                                { "key": "experience_level", "value": "senior" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Salary Range",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?salary_min=1000&salary_max=5000",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [
+                                { "key": "salary_min", "value": "1000" },
+                                { "key": "salary_max", "value": "5000" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Filter by Date Posted",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?date_from=2026-01-01",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [
+                                { "key": "date_from", "value": "2026-01-01" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Sort by Salary High to Low",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?sort_by=salary_high",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [
+                                { "key": "sort_by", "value": "salary_high" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Combined Filters",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs?work_type=remote&experience_level=senior&sort_by=latest",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs"],
+                            "query": [
+                                { "key": "work_type", "value": "remote" },
+                                {
+                                    "key": "experience_level",
+                                    "value": "senior"
+                                },
+                                { "key": "sort_by", "value": "latest" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Single Job",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/{{job_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "{{job_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Non-Existent Job (should fail 404)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/9999",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "9999"]
+                        }
+                    }
+                }
+            ]
         },
+
         {
-          "name": "Update Candidate Profile",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"bio\": \"Experienced Laravel developer with 3 years of experience\",\n  \"linkedin_url\": \"https://linkedin.com/in/sara-candidate\",\n  \"skills\": \"Laravel, Vue.js, MySQL, REST APIs\"\n}"
-            }
-          }
+            "name": "👔 EMPLOYER - Job Management",
+            "item": [
+                {
+                    "name": "List My Jobs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs"]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Job Listing",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) {",
+                                    "  pm.collectionVariables.set('job_id', json.data.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Senior Laravel Developer\",\n  \"description\": \"We are looking for a skilled Laravel developer to join our team and build amazing APIs.\",\n  \"responsibilities\": \"Build and maintain REST APIs, write clean code, do code reviews\",\n  \"skills_required\": \"Laravel, MySQL, REST APIs, Git\",\n  \"category_id\": 1,\n  \"location\": \"Cairo, Egypt\",\n  \"work_type\": \"remote\",\n  \"experience_level\": \"senior\",\n  \"salary_min\": 2000,\n  \"salary_max\": 4000,\n  \"deadline\": \"2026-12-31\",\n  \"technologies\": [\"Laravel\", \"MySQL\", \"Vue.js\", \"Git\"]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Create Job - Missing Fields (should fail 422)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        }
+                    }
+                },
+                {
+                    "name": "Create Job - Invalid Work Type (should fail 422)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Test Job\",\n  \"work_type\": \"invalid_type\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Show Single My Job",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs/{{job_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs", "{{job_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Update My Job",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs/{{job_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs", "{{job_id}}"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Updated Laravel Developer Position\",\n  \"salary_min\": 2500,\n  \"salary_max\": 5000,\n  \"technologies\": [\"Laravel\", \"React\", \"Docker\"]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Update Another Employer Job (should fail 403)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs/999",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs", "999"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Hacked Job\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete My Job",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs/{{job_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs", "{{job_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Candidate tries Employer Route (should fail 403)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "jobs"]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "🛡️ ADMIN - Job Management",
+            "item": [
+                {
+                    "name": "List All Jobs (all statuses)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs"]
+                        }
+                    }
+                },
+                {
+                    "name": "List Pending Jobs Only",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs?status=pending",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs"],
+                            "query": [{ "key": "status", "value": "pending" }]
+                        }
+                    }
+                },
+                {
+                    "name": "List Approved Jobs Only",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs?status=approved",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs"],
+                            "query": [{ "key": "status", "value": "approved" }]
+                        }
+                    }
+                },
+                {
+                    "name": "Approve a Job",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs/1/approve",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs", "1", "approve"]
+                        }
+                    }
+                },
+                {
+                    "name": "Reject a Job",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs/2/reject",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs", "2", "reject"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"reason\": \"Job description is incomplete and does not meet platform standards\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Employer tries Admin Route (should fail 403)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/admin/jobs",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "admin", "jobs"]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "📝 APPLICATIONS",
+            "item": [
+                {
+                    "name": "Apply for a Job (JSON)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) {",
+                                    "  pm.collectionVariables.set('application_id', json.data.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/apply",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "apply"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"contact_email\": \"sara.candidate@test.com\",\n  \"contact_phone\": \"+201234567890\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Apply for a Job (with Resume - form-data)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/2/apply",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "2", "apply"]
+                        },
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "contact_email",
+                                    "value": "sara@test.com",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "contact_phone",
+                                    "value": "+201234567890",
+                                    "type": "text"
+                                },
+                                { "key": "resume", "type": "file", "src": "" }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Apply Twice Same Job (should fail - duplicate)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/apply",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "apply"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"contact_email\": \"sara.candidate@test.com\",\n  \"contact_phone\": \"+201234567890\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Employer tries to Apply (should fail 403)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/apply",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "apply"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"contact_email\": \"employer@test.com\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "List My Applications (Candidate)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/candidate/applications",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "candidate", "applications"]
+                        }
+                    }
+                },
+                {
+                    "name": "Cancel My Application",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/applications/{{application_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "applications",
+                                "{{application_id}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Applications Received (Employer)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/applications",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "applications"]
+                        }
+                    }
+                },
+                {
+                    "name": "Accept an Application (Employer)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/applications/{{application_id}}/accept",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "applications",
+                                "{{application_id}}",
+                                "accept"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reject an Application (Employer)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/applications/{{application_id}}/reject",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "applications",
+                                "{{application_id}}",
+                                "reject"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "💬 COMMENTS",
+            "item": [
+                {
+                    "name": "Get Comments for a Job (Public)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/comments",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "comments"]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Comment (Employer)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var json = pm.response.json();",
+                                    "if (json.data && json.data.id) {",
+                                    "  pm.collectionVariables.set('comment_id', json.data.id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/comments",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "comments"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"body\": \"This is a great opportunity for experienced Laravel developers!\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Add Comment (Candidate)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/jobs/1/comments",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "jobs", "1", "comments"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"body\": \"Is remote work available for candidates outside Cairo?\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Comment (Admin)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{admin_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/comments/{{comment_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "comments", "{{comment_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Own Comment (Owner)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/comments/{{comment_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "comments", "{{comment_id}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Someone Else Comment (should fail 403)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/comments/1",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "comments", "1"]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "💳 PAYMENTS",
+            "item": [
+                {
+                    "name": "Initiate Payment (Employer after accepting candidate)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/payments/checkout",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "payments", "checkout"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"application_id\": {{application_id}}\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Stripe Webhook",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Stripe-Signature",
+                                "value": "YOUR_STRIPE_SIGNATURE"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/payments/webhook",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "payments", "webhook"]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_123\",\n      \"amount\": 5000,\n      \"currency\": \"usd\",\n      \"metadata\": {\n        \"application_id\": \"1\",\n        \"employer_id\": \"2\"\n      }\n    }\n  }\n}"
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "📊 ANALYTICS (Bonus)",
+            "item": [
+                {
+                    "name": "Get My Job Post Analytics (Employer)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/analytics",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "employer", "analytics"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Analytics for Specific Job",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{employer_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/employer/analytics/{{job_id}}",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "employer",
+                                "analytics",
+                                "{{job_id}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "name": "🔔 NOTIFICATIONS (Bonus)",
+            "item": [
+                {
+                    "name": "Get My Notifications (Candidate)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/notifications",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "notifications"]
+                        }
+                    }
+                },
+                {
+                    "name": "Mark Notification as Read",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            { "key": "Accept", "value": "application/json" },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{candidate_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/notifications/{{notification_uuid}}/read",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "notifications", "{{notification_uuid}}", "read"]
+                        },
+                        "description": "Use a UUID from GET /api/notifications as the {{notification_uuid}} variable. The notifications table uses UUID primary keys, not numeric IDs."
+                    }
+                }
+            ]
         }
-      ]
-    },
-
-    {
-      "name": "📋 CATEGORIES (Public)",
-      "item": [
-        {
-          "name": "Get All Categories",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] }
-          }
-        },
-        {
-          "name": "Get Single Category",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/categories/{{category_id}}", "host": ["{{base_url}}"], "path": ["api", "categories", "{{category_id}}"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "💼 JOBS (Public)",
-      "item": [
-        {
-          "name": "Get All Approved Jobs",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/jobs", "host": ["{{base_url}}"], "path": ["api", "jobs"] }
-          }
-        },
-        {
-          "name": "Search Jobs by Keyword",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?search=laravel",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "search", "value": "laravel" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Category",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?category_id=1",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "category_id", "value": "1" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Work Type (remote)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?work_type=remote",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "work_type", "value": "remote" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Location",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?location=Cairo",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "location", "value": "Cairo" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Experience Level",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?experience_level=senior",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "experience_level", "value": "senior" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Salary Range",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?salary_min=1000&salary_max=5000",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "salary_min", "value": "1000" }, { "key": "salary_max", "value": "5000" }]
-            }
-          }
-        },
-        {
-          "name": "Filter by Date Posted",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?date_from=2026-01-01",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "date_from", "value": "2026-01-01" }]
-            }
-          }
-        },
-        {
-          "name": "Sort by Salary High to Low",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?sort_by=salary_high",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "sort_by", "value": "salary_high" }]
-            }
-          }
-        },
-        {
-          "name": "Combined Filters",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/jobs?work_type=remote&experience_level=senior&sort_by=latest",
-              "host": ["{{base_url}}"], "path": ["api", "jobs"],
-              "query": [{ "key": "work_type", "value": "remote" }, { "key": "experience_level", "value": "senior" }, { "key": "sort_by", "value": "latest" }]
-            }
-          }
-        },
-        {
-          "name": "Get Single Job",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["api", "jobs", "{{job_id}}"] }
-          }
-        },
-        {
-          "name": "Get Non-Existent Job (should fail 404)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/jobs/9999", "host": ["{{base_url}}"], "path": ["api", "jobs", "9999"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "👔 EMPLOYER - Job Management",
-      "item": [
-        {
-          "name": "List My Jobs",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs"] }
-          }
-        },
-        {
-          "name": "Create Job Listing",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.id) {",
-                  "  pm.collectionVariables.set('job_id', json.data.id);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Senior Laravel Developer\",\n  \"description\": \"We are looking for a skilled Laravel developer to join our team and build amazing APIs.\",\n  \"responsibilities\": \"Build and maintain REST APIs, write clean code, do code reviews\",\n  \"skills_required\": \"Laravel, MySQL, REST APIs, Git\",\n  \"category_id\": 1,\n  \"location\": \"Cairo, Egypt\",\n  \"work_type\": \"remote\",\n  \"experience_level\": \"senior\",\n  \"salary_min\": 2000,\n  \"salary_max\": 4000,\n  \"deadline\": \"2026-12-31\",\n  \"technologies\": [\"Laravel\", \"MySQL\", \"Vue.js\", \"Git\"]\n}"
-            }
-          }
-        },
-        {
-          "name": "Create Job - Missing Fields (should fail 422)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{}"
-            }
-          }
-        },
-        {
-          "name": "Create Job - Invalid Work Type (should fail 422)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Test Job\",\n  \"work_type\": \"invalid_type\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Show Single My Job",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs", "{{job_id}}"] }
-          }
-        },
-        {
-          "name": "Update My Job",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs", "{{job_id}}"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Laravel Developer Position\",\n  \"salary_min\": 2500,\n  \"salary_max\": 5000,\n  \"technologies\": [\"Laravel\", \"React\", \"Docker\"]\n}"
-            }
-          }
-        },
-        {
-          "name": "Update Another Employer Job (should fail 403)",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs/999", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs", "999"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Hacked Job\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Delete My Job",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs/{{job_id}}", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs", "{{job_id}}"] }
-          }
-        },
-        {
-          "name": "Candidate tries Employer Route (should fail 403)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/jobs", "host": ["{{base_url}}"], "path": ["api", "employer", "jobs"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "🛡️ ADMIN - Job Management",
-      "item": [
-        {
-          "name": "List All Jobs (all statuses)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": { "raw": "{{base_url}}/api/admin/jobs", "host": ["{{base_url}}"], "path": ["api", "admin", "jobs"] }
-          }
-        },
-        {
-          "name": "List Pending Jobs Only",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": {
-              "raw": "{{base_url}}/api/admin/jobs?status=pending",
-              "host": ["{{base_url}}"], "path": ["api", "admin", "jobs"],
-              "query": [{ "key": "status", "value": "pending" }]
-            }
-          }
-        },
-        {
-          "name": "List Approved Jobs Only",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": {
-              "raw": "{{base_url}}/api/admin/jobs?status=approved",
-              "host": ["{{base_url}}"], "path": ["api", "admin", "jobs"],
-              "query": [{ "key": "status", "value": "approved" }]
-            }
-          }
-        },
-        {
-          "name": "Approve a Job",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": { "raw": "{{base_url}}/api/admin/jobs/1/approve", "host": ["{{base_url}}"], "path": ["api", "admin", "jobs", "1", "approve"] }
-          }
-        },
-        {
-          "name": "Reject a Job",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": { "raw": "{{base_url}}/api/admin/jobs/2/reject", "host": ["{{base_url}}"], "path": ["api", "admin", "jobs", "2", "reject"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"reason\": \"Job description is incomplete and does not meet platform standards\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Employer tries Admin Route (should fail 403)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/admin/jobs", "host": ["{{base_url}}"], "path": ["api", "admin", "jobs"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "📝 APPLICATIONS",
-      "item": [
-        {
-          "name": "Apply for a Job (JSON)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.id) {",
-                  "  pm.collectionVariables.set('application_id', json.data.id);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/apply", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "apply"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contact_email\": \"sara.candidate@test.com\",\n  \"contact_phone\": \"+201234567890\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Apply for a Job (with Resume - form-data)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/2/apply", "host": ["{{base_url}}"], "path": ["api", "jobs", "2", "apply"] },
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "contact_email", "value": "sara@test.com", "type": "text" },
-                { "key": "contact_phone", "value": "+201234567890", "type": "text" },
-                { "key": "resume", "type": "file", "src": "" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Apply Twice Same Job (should fail - duplicate)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/apply", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "apply"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contact_email\": \"sara.candidate@test.com\",\n  \"contact_phone\": \"+201234567890\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Employer tries to Apply (should fail 403)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/apply", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "apply"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contact_email\": \"employer@test.com\"\n}"
-            }
-          }
-        },
-        {
-          "name": "List My Applications (Candidate)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/candidate/applications", "host": ["{{base_url}}"], "path": ["api", "candidate", "applications"] }
-          }
-        },
-        {
-          "name": "Cancel My Application",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/applications/{{application_id}}", "host": ["{{base_url}}"], "path": ["api", "applications", "{{application_id}}"] }
-          }
-        },
-        {
-          "name": "List Applications Received (Employer)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/applications", "host": ["{{base_url}}"], "path": ["api", "employer", "applications"] }
-          }
-        },
-        {
-          "name": "Accept an Application (Employer)",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/applications/{{application_id}}/accept", "host": ["{{base_url}}"], "path": ["api", "applications", "{{application_id}}", "accept"] }
-          }
-        },
-        {
-          "name": "Reject an Application (Employer)",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/applications/{{application_id}}/reject", "host": ["{{base_url}}"], "path": ["api", "applications", "{{application_id}}", "reject"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "💬 COMMENTS",
-      "item": [
-        {
-          "name": "Get Comments for a Job (Public)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/comments", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "comments"] }
-          }
-        },
-        {
-          "name": "Add Comment (Employer)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.data && json.data.id) {",
-                  "  pm.collectionVariables.set('comment_id', json.data.id);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/comments", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "comments"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"body\": \"This is a great opportunity for experienced Laravel developers!\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Add Comment (Candidate)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/jobs/1/comments", "host": ["{{base_url}}"], "path": ["api", "jobs", "1", "comments"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"body\": \"Is remote work available for candidates outside Cairo?\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Delete Comment (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }],
-            "url": { "raw": "{{base_url}}/api/comments/{{comment_id}}", "host": ["{{base_url}}"], "path": ["api", "comments", "{{comment_id}}"] }
-          }
-        },
-        {
-          "name": "Delete Own Comment (Owner)",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/comments/{{comment_id}}", "host": ["{{base_url}}"], "path": ["api", "comments", "{{comment_id}}"] }
-          }
-        },
-        {
-          "name": "Delete Someone Else Comment (should fail 403)",
-          "request": {
-            "method": "DELETE",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/comments/1", "host": ["{{base_url}}"], "path": ["api", "comments", "1"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "💳 PAYMENTS",
-      "item": [
-        {
-          "name": "Initiate Payment (Employer after accepting candidate)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/payments/checkout", "host": ["{{base_url}}"], "path": ["api", "payments", "checkout"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"application_id\": {{application_id}}\n}"
-            }
-          }
-        },
-        {
-          "name": "Stripe Webhook",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Stripe-Signature", "value": "YOUR_STRIPE_SIGNATURE" }],
-            "url": { "raw": "{{base_url}}/api/payments/webhook", "host": ["{{base_url}}"], "path": ["api", "payments", "webhook"] },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"type\": \"payment_intent.succeeded\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"pi_test_123\",\n      \"amount\": 5000,\n      \"currency\": \"usd\",\n      \"metadata\": {\n        \"application_id\": \"1\",\n        \"employer_id\": \"2\"\n      }\n    }\n  }\n}"
-            }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "📊 ANALYTICS (Bonus)",
-      "item": [
-        {
-          "name": "Get My Job Post Analytics (Employer)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/analytics", "host": ["{{base_url}}"], "path": ["api", "employer", "analytics"] }
-          }
-        },
-        {
-          "name": "Get Analytics for Specific Job",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{employer_token}}" }],
-            "url": { "raw": "{{base_url}}/api/employer/analytics/{{job_id}}", "host": ["{{base_url}}"], "path": ["api", "employer", "analytics", "{{job_id}}"] }
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "🔔 NOTIFICATIONS (Bonus)",
-      "item": [
-        {
-          "name": "Get My Notifications (Candidate)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/notifications", "host": ["{{base_url}}"], "path": ["api", "notifications"] }
-          }
-        },
-        {
-          "name": "Mark Notification as Read",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{candidate_token}}" }],
-            "url": { "raw": "{{base_url}}/api/notifications/1/read", "host": ["{{base_url}}"], "path": ["api", "notifications", "1", "read"] }
-          }
-        }
-      ]
-    }
-
-  ]
+    ]
 }

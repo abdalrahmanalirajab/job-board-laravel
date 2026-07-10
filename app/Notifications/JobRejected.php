@@ -3,6 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\JobListing;
+<<<<<<< HEAD
+=======
+use Illuminate\Bus\Queueable;
+>>>>>>> a27b7e7 (fixing bugs)
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
