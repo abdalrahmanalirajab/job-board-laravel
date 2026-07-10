@@ -85,7 +85,14 @@ class ApplicationController extends Controller
             // Load jobListing.employer so notification can access company name
             $application->load('jobListing.employer.employerProfile');
 
-            $application->candidate->notify(new ApplicationAccepted($application));
+            try {
+                $application->candidate->notify(new ApplicationAccepted($application));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to send acceptance notification', [
+                    'application_id' => $application->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
                 ->additional([
@@ -141,7 +148,14 @@ class ApplicationController extends Controller
             // Load jobListing.employer so notification can access company name
             $application->load('jobListing.employer.employerProfile');
 
-            $application->candidate->notify(new ApplicationRejected($application));
+            try {
+                $application->candidate->notify(new ApplicationRejected($application));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Failed to send rejection notification', [
+                    'application_id' => $application->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
                 ->additional([
