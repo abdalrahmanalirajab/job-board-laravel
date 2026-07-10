@@ -58,14 +58,17 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Check no payment already exists
-            if ($application->payment()->exists()) {
+            // Check no completed payment already exists
+            if ($application->payment()->where('status', 'completed')->exists()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment has already been made for this application',
                     'data'    => null,
                 ], 422);
             }
+
+            // Delete any previous pending/failed payment for this application
+            $application->payment()->where('status', '!=', 'completed')->delete();
 
             // Calculate amount: salary_max or default 50.00
             $amount = $application->jobListing->salary_max
