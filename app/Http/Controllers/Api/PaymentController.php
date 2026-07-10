@@ -75,39 +75,56 @@ class PaymentController extends Controller
                 ? (float) $application->jobListing->salary_max
                 : 50.00;
 
-            // Initialize Stripe
-            Stripe::setApiKey(config('services.stripe.secret'));
+            if ($amount <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid payment amount',
+                    'data'    => null,
+                ], 422);
+            }
 
-            // Create Stripe PaymentIntent
-            $paymentIntent = PaymentIntent::create([
-                'amount'   => (int) ($amount * 100), // convert to cents
-                'currency' => 'usd',
-                'metadata' => [
-                    'application_id'  => $application->id,
-                    'employer_id'     => auth()->id(),
-                    'job_title'       => $application->jobListing->title,
-                    'candidate_email' => $application->contact_email,
-                ],
-            ]);
+            // Wrap in DB transaction: create Payment record BEFORE Stripe PaymentIntent
+            // so the webhook can always find a matching record (race condition fix)
+            $payment = DB::transaction(function () use ($application, $amount) {
+                // 1. Create Payment record in DB first (no stripe IDs yet)
+                $payment = Payment::create([
+                    'employer_id'    => auth()->id(),
+                    'application_id' => $application->id,
+                    'amount'         => $amount,
+                    'currency'       => 'USD',
+                    'provider'       => 'stripe',
+                    'status'         => 'pending',
+                ]);
 
-            // Create Payment record in DB
-            Payment::create([
-                'employer_id'               => auth()->id(),
-                'application_id'            => $application->id,
-                'amount'                    => $amount,
-                'currency'                  => 'USD',
-                'provider'                  => 'stripe',
-                'stripe_payment_intent_id'  => $paymentIntent->id,
-                'stripe_client_secret'      => $paymentIntent->client_secret,
-                'status'                    => 'pending',
-            ]);
+                // 2. Initialize Stripe and create PaymentIntent
+                Stripe::setApiKey(config('services.stripe.secret'));
+
+                $paymentIntent = PaymentIntent::create([
+                    'amount'   => (int) ($amount * 100),
+                    'currency' => 'usd',
+                    'metadata' => [
+                        'application_id'  => $application->id,
+                        'employer_id'     => auth()->id(),
+                        'job_title'       => $application->jobListing->title,
+                        'candidate_email' => $application->contact_email,
+                    ],
+                ]);
+
+                // 3. Update the existing Payment record with Stripe IDs
+                $payment->update([
+                    'stripe_payment_intent_id' => $paymentIntent->id,
+                    'stripe_client_secret'     => $paymentIntent->client_secret,
+                ]);
+
+                return $payment;
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Payment initiated successfully',
                 'data'    => [
-                    'client_secret'          => $paymentIntent->client_secret,
-                    'payment_intent_id'      => $paymentIntent->id,
+                    'client_secret'          => $payment->stripe_client_secret,
+                    'payment_intent_id'      => $payment->stripe_payment_intent_id,
                     'amount'                 => $amount,
                     'currency'               => 'USD',
                     'stripe_publishable_key' => config('services.stripe.key'),
@@ -186,12 +203,37 @@ class PaymentController extends Controller
         }
     }
 
+    private function findPaymentByIntent(string $paymentIntentId, mixed $paymentIntent): ?Payment
+    {
+        // Try primary lookup by stripe_payment_intent_id
+        $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)
+            ->lockForUpdate()
+            ->first();
+
+        if ($payment) {
+            return $payment;
+        }
+
+        // Fallback: lookup by application_id from metadata (race condition safety net)
+        $applicationId = $paymentIntent->metadata->application_id ?? null;
+        if ($applicationId) {
+            $payment = Payment::where('application_id', $applicationId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($payment) {
+                // Update the stripe_payment_intent_id for future lookups
+                $payment->update(['stripe_payment_intent_id' => $paymentIntentId]);
+            }
+        }
+
+        return $payment;
+    }
+
     private function handlePaymentIntentSucceeded(mixed $event, string $eventId): void
     {
         $paymentIntent = $event->data->object;
-        $payment = Payment::where('stripe_payment_intent_id', $paymentIntent->id)
-            ->lockForUpdate()
-            ->first();
+        $payment = $this->findPaymentByIntent($paymentIntent->id, $paymentIntent);
 
         if (!$payment) {
             Log::warning('Stripe webhook: payment_intent.succeeded - no matching payment', [
@@ -224,9 +266,7 @@ class PaymentController extends Controller
     private function handlePaymentIntentFailed(mixed $event, string $eventId): void
     {
         $paymentIntent = $event->data->object;
-        $payment = Payment::where('stripe_payment_intent_id', $paymentIntent->id)
-            ->lockForUpdate()
-            ->first();
+        $payment = $this->findPaymentByIntent($paymentIntent->id, $paymentIntent);
 
         if (!$payment) {
             Log::warning('Stripe webhook: payment_intent.payment_failed - no matching payment', [
@@ -266,6 +306,7 @@ class PaymentController extends Controller
             return;
         }
 
+        // Checkout session doesn't carry metadata directly, so only primary lookup
         $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)
             ->lockForUpdate()
             ->first();
