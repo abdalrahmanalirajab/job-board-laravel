@@ -11,7 +11,9 @@ class ApplicationSeeder extends Seeder
 {
   public function run(): void
   {
-    Application::query()->delete();
+    if (Application::where('candidate_id', User::where('email', 'candidate@test.com')->value('id'))->exists()) {
+      return;
+    }
 
     $candidate = User::where('email', 'candidate@test.com')->first();
 

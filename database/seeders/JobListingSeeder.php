@@ -102,10 +102,7 @@ class JobListingSeeder extends Seeder
                     . "- Collaborate with stakeholders to gather and refine requirements.\n"
                     . "- Conduct code reviews and mentor junior team members.\n"
                     . "- Maintain documentation and uphold engineering standards.",
-                'skills_required'  => "- Strong problem-solving and analytical skills.\n"
-                    . "- Excellent written and verbal communication.\n"
-                    . "- Ability to work independently and as part of a team.\n"
-                    . "- Experience with Agile/Scrum methodologies.",
+                'skills_required'  => "Problem-solving, Communication, Teamwork, Agile/Scrum",
                 'salary_min'       => $jobData['salary_min'],
                 'salary_max'       => $jobData['salary_max'],
                 'location'         => match ($jobData['work_type']) {
