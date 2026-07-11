@@ -27,7 +27,7 @@ class UploadController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage(),
+                'message' => 'Upload failed.',
                 'data'    => null,
             ], 500);
         }

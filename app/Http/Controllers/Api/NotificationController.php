@@ -28,7 +28,7 @@ class NotificationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve notifications: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve notifications.',
                 'data'    => null,
             ], 500);
         }
@@ -52,7 +52,7 @@ class NotificationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve unread count: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve unread count.',
                 'data'    => null,
             ], 500);
         }
@@ -84,7 +84,7 @@ class NotificationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark notification as read: ' . $e->getMessage(),
+                'message' => 'Failed to mark notification as read.',
                 'data'    => null,
             ], 500);
         }
@@ -112,7 +112,7 @@ class NotificationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to mark all notifications as read: ' . $e->getMessage(),
+                'message' => 'Failed to mark all notifications as read.',
                 'data'    => null,
             ], 500);
         }

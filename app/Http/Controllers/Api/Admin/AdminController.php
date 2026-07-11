@@ -38,8 +38,8 @@ class AdminController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve users: ' . $e->getMessage(),
-                'data'    => null,
+                'message' => 'Failed to retrieve users.',
+                'data'    => null
             ], 500);
         }
     }
@@ -75,8 +75,8 @@ class AdminController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve comments: ' . $e->getMessage(),
-                'data'    => null,
+                'message' => 'Failed to retrieve comments.',
+                'data'    => null
             ], 500);
         }
     }
@@ -104,8 +104,8 @@ class AdminController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete comment: ' . $e->getMessage(),
-                'data'    => null,
+                'message' => 'Failed to delete comment.',
+                'data'    => null
             ], 500);
         }
     }

@@ -18,9 +18,9 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AnalyticsController;
 
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/send-reset-link', [AuthController::class, 'sendResetLink']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/send-reset-link', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1');
 Route::post('/reset', [AuthController::class, 'reset'])->name('password.reset');
 
 // Public routes

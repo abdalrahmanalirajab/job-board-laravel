@@ -73,7 +73,7 @@ class AnalyticsController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve analytics overview: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve analytics overview.',
                 'data'    => null,
             ], 500);
         }
@@ -155,7 +155,7 @@ class AnalyticsController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve job stats: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve job stats.',
                 'data'    => null,
             ], 500);
         }
@@ -199,7 +199,7 @@ class AnalyticsController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve platform overview: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve platform overview.',
                 'data'    => null,
             ], 500);
         }

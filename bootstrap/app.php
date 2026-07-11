@@ -26,4 +26,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        $exceptions->captureThrowable(function (\Throwable $e) {
+            report($e);
+            if (config('app.debug')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Server error.',
+                    'data'    => null,
+                    'debug'   => [
+                        'exception' => get_class($e),
+                        'message'   => $e->getMessage(),
+                        'file'      => $e->getFile(),
+                        'line'      => $e->getLine(),
+                    ],
+                ], 500);
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred. Please try again later.',
+                'data'    => null,
+            ], 500);
+        });
     })->create();
