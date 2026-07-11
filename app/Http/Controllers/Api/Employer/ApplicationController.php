@@ -43,7 +43,7 @@ class ApplicationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve applications: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve applications.',
                 'data'    => null
             ], 500);
         }
@@ -102,7 +102,7 @@ class ApplicationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to accept application: ' . $e->getMessage(),
+                'message' => 'Failed to accept application.',
                 'data'    => null
             ], 500);
         }
@@ -140,6 +140,13 @@ class ApplicationController extends Controller
             }
 
             $reason = $request->input('reason', $request->input('rejection_reason', ''));
+            if (empty(trim($reason))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Rejection reason is required.',
+                    'data'    => null
+                ], 422);
+            }
             $application->update([
                 'status' => 'rejected',
                 'rejection_reason' => $reason,
@@ -165,7 +172,7 @@ class ApplicationController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to reject application: ' . $e->getMessage(),
+                'message' => 'Failed to reject application.',
                 'data'    => null
             ], 500);
         }
