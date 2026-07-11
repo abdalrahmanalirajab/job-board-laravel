@@ -77,9 +77,9 @@ class ApplicationResource extends JsonResource
       ];
     });
 
-    $resumeName = null;
-    if ($this->resume_path) {
-      $resumeName = 'CV_' . basename($this->resume_path);
+    $resumeName = $this->resume_name;
+    if (!$resumeName && $this->resume_path) {
+      $resumeName = basename($this->resume_path);
     }
 
     return [

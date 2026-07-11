@@ -15,7 +15,7 @@ class StoreApplicationRequest extends FormRequest
   {
     return [
       'resume' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
-      'resume_url' => 'nullable|string|max:2048',
+      'resume_url' => 'nullable|string|url|max:2048',
       'resume_name' => 'nullable|string|max:255',
       'contact_email' => 'nullable|email',
       'contact_phone' => 'nullable|string|regex:/^[0-9+\-\(\)\s]{7,20}$/|max:20',
