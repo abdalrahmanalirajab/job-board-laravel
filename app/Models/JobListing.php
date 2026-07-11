@@ -110,19 +110,21 @@ class JobListing extends Model
     public function scopeBySalary($query, $min = null, $max = null)
     {
         if ($min !== null) {
-            $query->where('salary_min', '>=', $min);
+            $query->where('salary_max', '>=', $min);
         }
         if ($max !== null) {
-            $query->where('salary_max', '<=', $max);
+            $query->where('salary_min', '<=', $max);
         }
         return $query;
     }
 
     public function scopeSearch($query, $keyword)
     {
-        return $query->where(function ($q) use ($keyword) {
-            $q->where('title', 'like', "%{$keyword}%")
-              ->orWhere('description', 'like', "%{$keyword}%");
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $keyword);
+        $pattern = "%{$escaped}%";
+        return $query->where(function ($q) use ($pattern) {
+            $q->whereRaw('title LIKE ? ESCAPE \'\\\'', [$pattern])
+              ->orWhereRaw('description LIKE ? ESCAPE \'\\\'', [$pattern]);
         });
     }
 }

@@ -17,13 +17,15 @@ class CandidateController extends Controller
                 ->whereHas('candidateProfile');
 
             if (!empty($skill)) {
-                $query->where(function ($q) use ($skill) {
-                    $q->where('name', 'like', "%{$skill}%")
-                      ->orWhere('email', 'like', "%{$skill}%")
-                      ->orWhereHas('candidateProfile', function ($q) use ($skill) {
-                          $q->where('skills', 'like', "%{$skill}%")
-                            ->orWhere('bio', 'like', "%{$skill}%")
-                            ->orWhere('linkedin_url', 'like', "%{$skill}%");
+                $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $skill);
+                $pattern = "%{$escaped}%";
+                $query->where(function ($q) use ($pattern) {
+                    $q->whereRaw('name LIKE ? ESCAPE \'\\\'', [$pattern])
+                      ->orWhereRaw('email LIKE ? ESCAPE \'\\\'', [$pattern])
+                      ->orWhereHas('candidateProfile', function ($q) use ($pattern) {
+                          $q->whereRaw('skills LIKE ? ESCAPE \'\\\'', [$pattern])
+                            ->orWhereRaw('bio LIKE ? ESCAPE \'\\\'', [$pattern])
+                            ->orWhereRaw('linkedin_url LIKE ? ESCAPE \'\\\'', [$pattern]);
                       });
                 });
             }
@@ -36,7 +38,7 @@ class CandidateController extends Controller
                     'id'       => $user->id,
                     'name'     => $user->name,
                     'email'    => $user->email,
-                    'phone'    => null,
+                    'phone'    => $user->phone ?? ($profile && $profile->phone ? $profile->phone : null),
                     'linkedin' => $profile ? $profile->linkedin_url : null,
                     'skills'   => $profile && $profile->skills ? $profile->skills : [],
                     'bio'      => $profile ? $profile->bio : null,
@@ -51,7 +53,7 @@ class CandidateController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to search candidates: ' . $e->getMessage(),
+                'message' => 'Failed to search candidates.',
                 'data'    => null,
             ], 500);
         }
