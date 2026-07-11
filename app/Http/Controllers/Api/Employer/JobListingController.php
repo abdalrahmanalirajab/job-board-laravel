@@ -7,8 +7,12 @@ use App\Http\Requests\StoreJobListingRequest;
 use App\Http\Requests\UpdateJobListingRequest;
 use App\Http\Resources\JobListingDetailResource;
 use App\Http\Resources\JobListingResource;
+use App\Models\Application;
 use App\Models\JobListing;
+use App\Notifications\ApplicationCancelledByJobEdit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -156,8 +160,9 @@ class JobListingController extends Controller
                 $data['skills_required'] = implode(', ', $request->input('skills'));
             }
 
-            // Reset to pending if previously rejected
-            if ($jobListing->status === 'rejected') {
+            // Reset to pending if previously rejected — this triggers re-review
+            $wasRejected = $jobListing->status === 'rejected';
+            if ($wasRejected) {
                 $data['status'] = 'pending';
             }
 
@@ -176,6 +181,32 @@ class JobListingController extends Controller
                 $jobListing->technologies()->delete();
                 foreach ((array) $request->input('technologies', []) as $techName) {
                     $jobListing->technologies()->create(['name' => $techName]);
+                }
+            }
+
+            // Only cancel applications if job was rejected (re-review flow)
+            // For approved/pending jobs, just update fields — applications stay intact
+            if ($wasRejected) {
+                $affectedApplications = Application::where('job_listing_id', $jobListing->id)
+                    ->whereNotIn('status', ['cancelled'])
+                    ->get();
+
+                if ($affectedApplications->isNotEmpty()) {
+                    Application::where('job_listing_id', $jobListing->id)
+                        ->whereNotIn('status', ['cancelled'])
+                        ->update(['status' => 'cancelled']);
+
+                    foreach ($affectedApplications as $application) {
+                        $application->loadMissing('jobListing.employer.employerProfile', 'candidate');
+                        try {
+                            $application->candidate->notify(new ApplicationCancelledByJobEdit($application));
+                        } catch (\Throwable $e) {
+                            Log::warning('Failed to send job edit cancellation notification', [
+                                'application_id' => $application->id,
+                                'error'          => $e->getMessage(),
+                            ]);
+                        }
+                    }
                 }
             }
 
