@@ -70,9 +70,9 @@ class PaymentController extends Controller
             // Delete any previous pending/failed payment for this application
             $application->payment()->where('status', '!=', 'completed')->delete();
 
-            // Calculate amount: salary_max or default 50.00
+            // Calculate amount: 10% of salary_max (platform fee), minimum $1.00
             $amount = $application->jobListing->salary_max
-                ? (float) $application->jobListing->salary_max
+                ? round((float) $application->jobListing->salary_max * 0.10, 2)
                 : 50.00;
 
             if ($amount <= 0) {
@@ -134,8 +134,6 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment initiation failed: ' . $e->getMessage(),
-                'data'    => null,
             ], 500);
         }
     }
@@ -360,7 +358,7 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve payments: ' . $e->getMessage(),
+                'message' => 'Failed to retrieve payments.',
                 'data'    => null,
             ], 500);
         }
