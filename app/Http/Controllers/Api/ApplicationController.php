@@ -7,7 +7,9 @@ use App\Http\Requests\StoreApplicationRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Notifications\NewApplicationSubmitted;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
@@ -74,6 +76,19 @@ class ApplicationController extends Controller
             'status' => 'pending',
             'applied_at' => now(),
         ]);
+
+        // Notify the employer about the new application
+        try {
+            $job->load('employer');
+            $application->load('candidate');
+            $job->employer->notify(new NewApplicationSubmitted($application));
+        } catch (\Throwable $e) {
+            Log::warning('Failed to send new application notification to employer', [
+                'application_id' => $application->id,
+                'employer_id'    => $job->employer_id,
+                'error'          => $e->getMessage(),
+            ]);
+        }
 
         return (new ApplicationResource($application->load(['jobListing', 'candidate'])))
             ->additional([
