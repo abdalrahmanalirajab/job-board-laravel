@@ -27,13 +27,14 @@ class ApplicationController extends Controller
                 $query->where('job_listing_id', $request->job_id);
             }
 
-            if ($request->has('status') && in_array($request->status, ['pending', 'accepted', 'rejected'])) {
+            if ($request->has('status') && in_array($request->status, ['pending', 'accepted', 'rejected', 'paid'])) {
                 $query->where('status', $request->status);
             }
 
             $applications = $query->with([
                 'jobListing',
-                'candidate.candidateProfile'
+                'candidate.candidateProfile',
+                'payment',
             ])->latest()->paginate(10);
 
             return ApplicationResource::collection($applications)->additional([

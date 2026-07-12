@@ -77,9 +77,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/applications/{id}/reject', [EmployerApplicationController::class, 'reject']);
     });
 
-    // Employer payment checkout (inside auth:sanctum + employer)
+    // Employer payment routes (inside auth:sanctum + employer)
     Route::middleware('employer')->group(function () {
         Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
+        Route::post('/payments/confirm', [PaymentController::class, 'confirm']);
+        Route::get('/payments/{id}/status', [PaymentController::class, 'status']);
     });
 
     // Admin routes

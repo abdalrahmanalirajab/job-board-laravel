@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('applications', function (Blueprint $table) {
-            $table->string('resume_name', 255)->nullable()->after('resume_path');
-        });
+        if (!Schema::hasColumn('applications', 'resume_name')) {
+            Schema::table('applications', function (Blueprint $table) {
+                $table->string('resume_name', 255)->nullable();
+            });
+        }
     }
 
     public function down(): void

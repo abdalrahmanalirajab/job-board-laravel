@@ -14,6 +14,9 @@ class Payment extends Model
         'provider',
         'stripe_payment_intent_id',
         'stripe_client_secret',
+        'stripe_session_id',
+        'stripe_event_id',
+        'metadata',
         'status',
         'paid_at',
     ];
@@ -21,8 +24,9 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
-            'paid_at' => 'datetime',
-            'amount'  => 'decimal:2',
+            'paid_at'  => 'datetime',
+            'amount'   => 'decimal:2',
+            'metadata' => 'array',
         ];
     }
 

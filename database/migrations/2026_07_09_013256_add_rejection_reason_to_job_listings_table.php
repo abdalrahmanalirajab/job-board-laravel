@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('job_listings', function (Blueprint $table) {
-            $table->text('rejection_reason')->nullable()->after('status');
-        });
+        if (!Schema::hasColumn('job_listings', 'rejection_reason')) {
+            Schema::table('job_listings', function (Blueprint $table) {
+                $table->text('rejection_reason')->nullable();
+            });
+        }
     }
 
     public function down(): void
