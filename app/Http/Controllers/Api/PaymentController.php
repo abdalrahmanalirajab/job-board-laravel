@@ -9,8 +9,8 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Stripe\Checkout\Session as StripeCheckoutSession;
 use Stripe\Stripe;
-use Stripe\PaymentIntent;
 use Stripe\Webhook;
 use Stripe\Exception\SignatureVerificationException;
 
@@ -25,6 +25,8 @@ class PaymentController extends Controller
         try {
             $request->validate([
                 'application_id' => 'required|exists:applications,id',
+                'success_url'    => 'required|url',
+                'cancel_url'     => 'required|url',
             ]);
 
             $application = Application::find($request->application_id);
@@ -37,10 +39,8 @@ class PaymentController extends Controller
                 ], 404);
             }
 
-            // Eager load relationships to avoid N+1 query problems
             $application->load(['jobListing.employer', 'jobListing.category']);
 
-            // Verify the job belongs to the authenticated employer
             if ((int) $application->jobListing->employer_id !== (int) auth()->id()) {
                 return response()->json([
                     'success' => false,
@@ -49,7 +49,6 @@ class PaymentController extends Controller
                 ], 403);
             }
 
-            // Application must be accepted
             if ($application->status !== 'accepted') {
                 return response()->json([
                     'success' => false,
@@ -58,7 +57,6 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Check no completed payment already exists
             if ($application->payment()->where('status', 'completed')->exists()) {
                 return response()->json([
                     'success' => false,
@@ -67,10 +65,8 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Delete any previous pending/failed payment for this application
             $application->payment()->where('status', '!=', 'completed')->delete();
 
-            // Calculate amount: salary_max or default 50.00
             $amount = $application->jobListing->salary_max
                 ? (float) $application->jobListing->salary_max
                 : 50.00;
@@ -83,10 +79,7 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Wrap in DB transaction: create Payment record BEFORE Stripe PaymentIntent
-            // so the webhook can always find a matching record (race condition fix)
-            $payment = DB::transaction(function () use ($application, $amount) {
-                // 1. Create Payment record in DB first (no stripe IDs yet)
+            $payment = DB::transaction(function () use ($application, $amount, $request) {
                 $payment = Payment::create([
                     'employer_id'    => auth()->id(),
                     'application_id' => $application->id,
@@ -96,38 +89,46 @@ class PaymentController extends Controller
                     'status'         => 'pending',
                 ]);
 
-                // 2. Initialize Stripe and create PaymentIntent
                 Stripe::setApiKey(config('services.stripe.secret'));
 
-                $paymentIntent = PaymentIntent::create([
-                    'amount'   => (int) ($amount * 100),
-                    'currency' => 'usd',
-                    'metadata' => [
-                        'application_id'  => $application->id,
-                        'employer_id'     => auth()->id(),
+                $session = StripeCheckoutSession::create([
+                    'mode'        => 'payment',
+                    'line_items'  => [[
+                        'price_data' => [
+                            'currency'     => 'usd',
+                            'product_data' => [
+                                'name' => 'Job Application Fee - ' . $application->jobListing->title,
+                            ],
+                            'unit_amount' => (int) ($amount * 100),
+                        ],
+                        'quantity'   => 1,
+                    ]],
+                    'metadata'  => [
+                        'application_id'  => (string) $application->id,
+                        'employer_id'     => (string) auth()->id(),
                         'job_title'       => $application->jobListing->title,
                         'candidate_email' => $application->contact_email,
                     ],
+                    'success_url' => $request->success_url,
+                    'cancel_url'  => $request->cancel_url,
                 ]);
 
-                // 3. Update the existing Payment record with Stripe IDs
                 $payment->update([
-                    'stripe_payment_intent_id' => $paymentIntent->id,
-                    'stripe_client_secret'     => $paymentIntent->client_secret,
+                    'stripe_session_id' => $session->id,
                 ]);
 
-                return $payment;
+                return [$payment, $session];
             });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Payment initiated successfully',
                 'data'    => [
-                    'client_secret'          => $payment->stripe_client_secret,
-                    'payment_intent_id'      => $payment->stripe_payment_intent_id,
-                    'amount'                 => $amount,
-                    'currency'               => 'USD',
-                    'stripe_publishable_key' => config('services.stripe.key'),
+                    'checkout_url' => $payment[1]->url,
+                    'payment_id'   => $payment[0]->id,
+                    'session_id'   => $payment[0]->stripe_session_id,
+                    'amount'       => $amount,
+                    'currency'     => 'USD',
                 ],
             ]);
 
@@ -135,6 +136,119 @@ class PaymentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Payment initiation failed: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirm a payment after the user returns from Stripe Checkout.
+     */
+    public function confirm(Request $request)
+    {
+        try {
+            $request->validate(['session_id' => 'required|string']);
+
+            Stripe::setApiKey(config('services.stripe.secret'));
+            $session = StripeCheckoutSession::retrieve($request->session_id);
+
+            $payment = Payment::where('stripe_session_id', $session->id)->first();
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not found.',
+                    'data'    => null,
+                ], 404);
+            }
+
+            if ($payment->employer_id !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized.',
+                    'data'    => null,
+                ], 403);
+            }
+
+            $status = match ($session->payment_status) {
+                'paid'       => 'completed',
+                'unpaid'     => 'pending',
+                'no_payment_required' => 'completed',
+                default      => $payment->status,
+            };
+
+            if ($status === 'completed' && $payment->status !== 'completed') {
+                $payment->update([
+                    'status'                   => 'completed',
+                    'paid_at'                  => now(),
+                    'stripe_payment_intent_id' => $session->payment_intent,
+                ]);
+
+                $application = $payment->application;
+                if ($application && $application->status !== 'paid') {
+                    $application->update(['status' => 'paid']);
+                }
+            } elseif ($session->status === 'expired') {
+                $payment->update(['status' => 'failed']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment status updated.',
+                'data'    => [
+                    'status'  => $payment->fresh()->status,
+                    'session' => [
+                        'id'              => $session->id,
+                        'payment_status'  => $session->payment_status,
+                        'payment_intent'  => $session->payment_intent,
+                    ],
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment confirmation failed: ' . $e->getMessage(),
+                'data'    => null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the status of a payment by its local ID.
+     */
+    public function status(int $id)
+    {
+        try {
+            $payment = Payment::find($id);
+
+            if (!$payment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment not found.',
+                    'data'    => null,
+                ], 404);
+            }
+
+            if ($payment->employer_id !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized.',
+                    'data'    => null,
+                ], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment status retrieved.',
+                'data'    => [
+                    'payment_status' => $payment->status,
+                    'paid_at'        => $payment->paid_at,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status: ' . $e->getMessage(),
                 'data'    => null,
             ], 500);
         }
@@ -296,26 +410,15 @@ class PaymentController extends Controller
     private function handleCheckoutSessionCompleted(mixed $event, string $eventId): void
     {
         $session = $event->data->object;
-        $paymentIntentId = $session->payment_intent ?? null;
 
-        if (!$paymentIntentId) {
-            Log::warning('Stripe webhook: checkout.session.completed - no payment_intent in session', [
-                'session_id' => $session->id,
-                'event_id'   => $eventId,
-            ]);
-            return;
-        }
-
-        // Checkout session doesn't carry metadata directly, so only primary lookup
-        $payment = Payment::where('stripe_payment_intent_id', $paymentIntentId)
+        $payment = Payment::where('stripe_session_id', $session->id)
             ->lockForUpdate()
             ->first();
 
         if (!$payment) {
             Log::warning('Stripe webhook: checkout.session.completed - no matching payment', [
-                'stripe_payment_intent_id' => $paymentIntentId,
-                'session_id'               => $session->id,
-                'event_id'                 => $eventId,
+                'session_id' => $session->id,
+                'event_id'   => $eventId,
             ]);
             return;
         }
@@ -328,15 +431,29 @@ class PaymentController extends Controller
             return;
         }
 
-        $payment->update([
+        $paymentIntentId = $session->payment_intent ?? null;
+
+        $update = [
             'status'  => 'completed',
             'paid_at' => now(),
-        ]);
+        ];
+
+        if ($paymentIntentId) {
+            $update['stripe_payment_intent_id'] = $paymentIntentId;
+        }
+
+        $payment->update($update);
+
+        $application = $payment->application;
+        if ($application && $application->status !== 'paid') {
+            $application->update(['status' => 'paid']);
+        }
 
         Log::info('Stripe webhook: checkout session completed', [
             'payment_id'               => $payment->id,
             'session_id'               => $session->id,
             'stripe_payment_intent_id' => $paymentIntentId,
+            'application_status'       => $application?->status,
             'event_id'                 => $eventId,
         ]);
     }

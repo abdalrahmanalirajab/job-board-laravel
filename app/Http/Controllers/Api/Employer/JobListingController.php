@@ -9,8 +9,9 @@ use App\Http\Resources\JobListingDetailResource;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 
 class JobListingController extends Controller
@@ -37,6 +38,9 @@ class JobListingController extends Controller
                 ],
             ]);
         } catch (\Throwable $e) {
+            Log::error('EmployerJobListingController@index: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve job listings.',
@@ -84,6 +88,10 @@ class JobListingController extends Controller
                 ->response()
                 ->setStatusCode(201);
         } catch (\Throwable $e) {
+            Log::error('EmployerJobListingController@store: ' . $e->getMessage(), [
+                'trace'   => $e->getTraceAsString(),
+                'payload' => $request->all(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create job listing.',
@@ -120,6 +128,10 @@ class JobListingController extends Controller
                 'message' => 'Job listing retrieved successfully.',
             ]);
         } catch (\Throwable $e) {
+            Log::error('EmployerJobListingController@show: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'job_id' => $id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve job listing.',
@@ -186,6 +198,11 @@ class JobListingController extends Controller
                 'message' => 'Job listing updated successfully.',
             ]);
         } catch (\Throwable $e) {
+            Log::error('EmployerJobListingController@update: ' . $e->getMessage(), [
+                'trace'   => $e->getTraceAsString(),
+                'job_id'  => $id,
+                'payload' => $request->all(),
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update job listing.',
@@ -231,6 +248,10 @@ class JobListingController extends Controller
                 'data'    => null,
             ]);
         } catch (\Throwable $e) {
+            Log::error('EmployerJobListingController@destroy: ' . $e->getMessage(), [
+                'trace'  => $e->getTraceAsString(),
+                'job_id' => $id,
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete job listing.',
