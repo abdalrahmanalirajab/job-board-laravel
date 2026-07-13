@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\JobListing;
+use App\Domain\Events\CommentCreated;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
@@ -67,6 +68,8 @@ class CommentController extends Controller
             'body' => $request->body,
             'is_visible' => true,
         ]);
+
+        event(new CommentCreated($comment->id, $job->id, $request->user()->id, $request->body));
 
         return (new CommentResource($comment->load('author')))
             ->additional([

@@ -16,7 +16,30 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \App\Application\Interfaces\PaymentRepositoryInterface::class,
+            \App\Infrastructure\Persistence\EloquentPaymentRepository::class,
+        );
+
+        $this->app->bind(
+            \App\Application\Interfaces\PaymentGatewayInterface::class,
+            \App\Infrastructure\Gateway\StripePaymentGateway::class,
+        );
+
+        $this->app->bind(
+            \App\Application\Interfaces\PaymentEventDispatcherInterface::class,
+            \App\Infrastructure\Event\LaravelPaymentEventDispatcher::class,
+        );
+
+        $this->app->bind(
+            \App\Application\Interfaces\PaymentApplicationInterface::class,
+            \App\Infrastructure\Persistence\EloquentPaymentApplicationService::class,
+        );
+
+        $this->app->bind(
+            \App\Application\Interfaces\NotificationRepositoryInterface::class,
+            \App\Repositories\EloquentNotificationRepository::class,
+        );
     }
 
     /**

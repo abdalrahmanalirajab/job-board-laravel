@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\AnalyticsController;
+use App\Http\Controllers\Api\AiController;
+use App\Http\Controllers\Api\ChatController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -44,6 +46,31 @@ Route::middleware('auth:sanctum')->group(function () {
     // Upload routes
     Route::post('/uploads/resume', [\App\Http\Controllers\Api\UploadController::class, 'resume']);
 
+    // AI routes (any authenticated user)
+    Route::post('/ai/interview-prep', [AiController::class, 'interviewPrep']);
+
+    // Candidate AI routes
+    Route::middleware('candidate')->group(function () {
+        Route::post('/ai/optimize-profile', [AiController::class, 'optimizeProfile']);
+    });
+
+    // Chat routes (any authenticated user)
+    Route::prefix('chat')->group(function () {
+        Route::get('/unread-count', [ChatController::class, 'unreadCount']);
+        Route::get('/conversations', [ChatController::class, 'index']);
+        Route::post('/conversations', [ChatController::class, 'store']);
+        Route::get('/conversations/{id}', [ChatController::class, 'show']);
+        Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+        Route::post('/conversations/{id}/read', [ChatController::class, 'markRead']);
+        Route::post('/conversations/{id}/typing', [ChatController::class, 'typing']);
+
+        // Chat AI routes
+        Route::post('/conversations/{id}/ai/smart-replies', [AiController::class, 'smartReplies']);
+        Route::post('/conversations/{id}/ai/summarize', [AiController::class, 'summarizeConversation']);
+        Route::post('/conversations/{id}/ai/suggest-schedule', [AiController::class, 'suggestSchedule']);
+        Route::post('/ai/check-tone', [AiController::class, 'checkTone']);
+    });
+
     // Employer routes
     Route::middleware('employer')->prefix('employer')->group(function () {
         Route::get('/jobs', [EmployerJobListingController::class, 'index']);
@@ -61,6 +88,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Employer candidate search
         Route::get('/candidates/search', [CandidateController::class, 'search']);
+
+        // AI job description generation
+        Route::post('/ai/generate-description', [AiController::class, 'generateJobDescription']);
     });
 
     // Candidate routes
@@ -68,6 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/jobs/{id}/apply', [ApplicationController::class, 'store']);
         Route::delete('/applications/{id}', [ApplicationController::class, 'destroy']);
         Route::get('/candidate/applications', [ApplicationController::class, 'myApplications']);
+
+        // Saved jobs
+        Route::get('/saved-jobs', [\App\Http\Controllers\Api\SavedJobController::class, 'index']);
+        Route::get('/saved-jobs/ids', [\App\Http\Controllers\Api\SavedJobController::class, 'savedIds']);
+        Route::post('/saved-jobs/{jobId}/toggle', [\App\Http\Controllers\Api\SavedJobController::class, 'toggle']);
+        Route::delete('/saved-jobs/{jobId}', [\App\Http\Controllers\Api\SavedJobController::class, 'destroy']);
     });
 
     // Employer application routes
@@ -77,9 +113,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/applications/{id}/reject', [EmployerApplicationController::class, 'reject']);
     });
 
-    // Employer payment checkout (inside auth:sanctum + employer)
+    // Employer payment routes (inside auth:sanctum + employer)
     Route::middleware('employer')->group(function () {
         Route::post('/payments/checkout', [PaymentController::class, 'checkout']);
+        Route::post('/payments/confirm', [PaymentController::class, 'confirm']);
+        Route::get('/payments/{id}/status', [PaymentController::class, 'status']);
     });
 
     // Admin routes
@@ -98,9 +136,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notification routes (authenticated)
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/count', [NotificationController::class, 'count']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 
     // Admin analytics
     Route::middleware('admin')->group(function () {

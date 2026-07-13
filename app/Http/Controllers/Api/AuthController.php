@@ -9,6 +9,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use App\Domain\Events\UserRegistered;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 
@@ -59,6 +60,8 @@ class AuthController extends Controller
             ]);
             $user->load('candidateProfile');
         }
+
+        event(new UserRegistered($user->id, $user->role, $user->name));
 
         // generate token
         $token = $user->createToken('auth_token')->plainTextToken;

@@ -92,6 +92,15 @@ class ApplicationResource extends JsonResource
       'applied_at' => $this->applied_at ? $this->applied_at->format('Y-m-d H:i:s') : null,
       'created_at' => $this->created_at,
       'rejection_reason' => $this->rejection_reason,
+      'payment' => $this->whenLoaded('payment', function () {
+          if (!$this->payment) return null;
+          return [
+              'id' => $this->payment->id,
+              'status' => $this->payment->status,
+              'amount' => $this->payment->amount,
+              'paid_at' => $this->payment->paid_at?->format('Y-m-d H:i:s'),
+          ];
+      }),
       'job' => $jobData,
       'candidate' => $candidateData,
     ];
