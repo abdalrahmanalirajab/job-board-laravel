@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Events\PaymentCompleted;
+use App\Domain\Events\PaymentFailed;
+use App\Domain\ValueObjects\Money;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PaymentResource;
 use App\Models\Application;
@@ -25,8 +28,8 @@ class PaymentController extends Controller
         try {
             $request->validate([
                 'application_id' => 'required|exists:applications,id',
-                'success_url'    => 'required|url',
-                'cancel_url'     => 'required|url',
+                'success_url'    => 'required|string',
+                'cancel_url'     => 'required|string',
             ]);
 
             $application = Application::find($request->application_id);
@@ -117,6 +120,13 @@ class PaymentController extends Controller
                     'stripe_session_id' => $session->id,
                 ]);
 
+                Log::info('Payment checkout: session created', [
+                    'payment_id'       => $payment->id,
+                    'application_id'   => $application->id,
+                    'stripe_session_id' => $session->id,
+                    'amount'           => $amount,
+                ]);
+
                 return [$payment, $session];
             });
 
@@ -152,9 +162,16 @@ class PaymentController extends Controller
             Stripe::setApiKey(config('services.stripe.secret'));
             $session = StripeCheckoutSession::retrieve($request->session_id);
 
+            Log::info('Payment confirm: session retrieved', [
+                'session_id'      => $session->id,
+                'payment_status'  => $session->payment_status,
+                'session_status'  => $session->status,
+            ]);
+
             $payment = Payment::where('stripe_session_id', $session->id)->first();
 
             if (!$payment) {
+                Log::warning('Payment confirm: payment not found', ['stripe_session_id' => $session->id]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment not found.',
@@ -163,6 +180,11 @@ class PaymentController extends Controller
             }
 
             if ($payment->employer_id !== auth()->id()) {
+                Log::warning('Payment confirm: unauthorized', [
+                    'payment_id'   => $payment->id,
+                    'employer_id'  => $payment->employer_id,
+                    'auth_id'      => auth()->id(),
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized.',
@@ -177,6 +199,13 @@ class PaymentController extends Controller
                 default      => $payment->status,
             };
 
+            Log::info('Payment confirm: status derived', [
+                'payment_id'      => $payment->id,
+                'current_status'  => $payment->status,
+                'derived_status'  => $status,
+                'session_payment' => $session->payment_status,
+            ]);
+
             if ($status === 'completed' && $payment->status !== 'completed') {
                 $payment->update([
                     'status'                   => 'completed',
@@ -187,16 +216,44 @@ class PaymentController extends Controller
                 $application = $payment->application;
                 if ($application && $application->status !== 'paid') {
                     $application->update(['status' => 'paid']);
+                    Log::info('Payment confirm: application marked paid', [
+                        'application_id' => $application->id,
+                    ]);
                 }
+
+                Log::info('Payment confirm: payment completed', ['payment_id' => $payment->id]);
+
+                event(new PaymentCompleted(
+                    paymentId: $payment->id,
+                    applicationId: $payment->application_id,
+                    employerId: $payment->employer_id,
+                    amount: new Money((float) $payment->amount, $payment->currency ?? 'USD'),
+                    paidAt: new \DateTimeImmutable($payment->paid_at ?? now()->toDateTimeString()),
+                ));
             } elseif ($session->status === 'expired') {
                 $payment->update(['status' => 'failed']);
+                Log::info('Payment confirm: session expired, payment failed', ['payment_id' => $payment->id]);
+
+                event(new PaymentFailed(
+                    paymentId: $payment->id,
+                    applicationId: $payment->application_id,
+                    employerId: $payment->employer_id,
+                    amount: new Money((float) $payment->amount, $payment->currency ?? 'USD'),
+                ));
             }
+
+            $freshStatus = $payment->fresh()->status;
+
+            Log::info('Payment confirm: returning', [
+                'payment_id' => $payment->id,
+                'status'     => $freshStatus,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Payment status updated.',
                 'data'    => [
-                    'status'  => $payment->fresh()->status,
+                    'status'  => $freshStatus,
                     'session' => [
                         'id'              => $session->id,
                         'payment_status'  => $session->payment_status,
@@ -375,6 +432,14 @@ class PaymentController extends Controller
             'stripe_payment_intent_id' => $paymentIntent->id,
             'event_id'                 => $eventId,
         ]);
+
+        event(new PaymentCompleted(
+            paymentId: $payment->id,
+            applicationId: $payment->application_id,
+            employerId: $payment->employer_id,
+            amount: new Money((float) $payment->amount, $payment->currency ?? 'USD'),
+            paidAt: new \DateTimeImmutable($payment->paid_at ?? now()->toDateTimeString()),
+        ));
     }
 
     private function handlePaymentIntentFailed(mixed $event, string $eventId): void
@@ -405,6 +470,13 @@ class PaymentController extends Controller
             'stripe_payment_intent_id' => $paymentIntent->id,
             'event_id'                 => $eventId,
         ]);
+
+        event(new PaymentFailed(
+            paymentId: $payment->id,
+            applicationId: $payment->application_id,
+            employerId: $payment->employer_id,
+            amount: new Money((float) $payment->amount, $payment->currency ?? 'USD'),
+        ));
     }
 
     private function handleCheckoutSessionCompleted(mixed $event, string $eventId): void
@@ -456,6 +528,14 @@ class PaymentController extends Controller
             'application_status'       => $application?->status,
             'event_id'                 => $eventId,
         ]);
+
+        event(new PaymentCompleted(
+            paymentId: $payment->id,
+            applicationId: $payment->application_id,
+            employerId: $payment->employer_id,
+            amount: new Money((float) $payment->amount, $payment->currency ?? 'USD'),
+            paidAt: new \DateTimeImmutable($payment->paid_at ?? now()->toDateTimeString()),
+        ));
     }
 
     /**

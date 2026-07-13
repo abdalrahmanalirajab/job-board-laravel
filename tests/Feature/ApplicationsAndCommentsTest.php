@@ -360,7 +360,7 @@ class ApplicationsAndCommentsTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'This application has already been reviewed');
+            ->assertJsonPath('message', 'This application has already been reviewed.');
     }
 
     /**

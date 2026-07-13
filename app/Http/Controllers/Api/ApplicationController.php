@@ -7,6 +7,8 @@ use App\Http\Requests\StoreApplicationRequest;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
 use App\Models\JobListing;
+use App\Domain\Events\ApplicationSubmitted;
+use App\Domain\Events\ApplicationWithdrawn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,6 +77,13 @@ class ApplicationController extends Controller
             'applied_at' => now(),
         ]);
 
+        event(new ApplicationSubmitted(
+            $application->id,
+            $job->id,
+            $request->user()->id,
+            $job->employer_id,
+        ));
+
         return (new ApplicationResource($application->load(['jobListing', 'candidate'])))
             ->additional([
                 'success' => true,
@@ -118,7 +127,17 @@ class ApplicationController extends Controller
             Storage::disk('public')->delete($application->resume_path);
         }
 
+        $application->load('jobListing');
+        $employerId = $application->jobListing->employer_id;
+
         $application->delete();
+
+        event(new ApplicationWithdrawn(
+            $id,
+            $application->job_listing_id,
+            $application->candidate_id,
+            $employerId,
+        ));
 
         return response()->json([
             'success' => true,

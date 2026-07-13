@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Api\Employer;
 
+use App\Domain\Events\ApplicationAccepted;
+use App\Domain\Events\ApplicationRejected;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ApplicationResource;
 use App\Models\Application;
-use App\Notifications\ApplicationAccepted;
-use App\Notifications\ApplicationRejected;
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
 {
-    /**
-     * List applications for jobs owned by the employer
-     */
     public function index(Request $request)
     {
         try {
@@ -39,29 +36,27 @@ class ApplicationController extends Controller
 
             return ApplicationResource::collection($applications)->additional([
                 'success' => true,
-                'message' => 'Applications retrieved successfully.'
+                'message' => 'Applications retrieved successfully.',
             ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve applications: ' . $e->getMessage(),
-                'data'    => null
+                'data'    => null,
             ], 500);
         }
     }
 
-    /**
-     * Accept a candidate application
-     */
     public function accept($id)
     {
         try {
             $application = Application::find($id);
+
             if (!$application) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Application not found.',
-                    'data'    => null
+                    'data'    => null,
                 ], 404);
             }
 
@@ -69,58 +64,52 @@ class ApplicationController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not authorized to manage this application.',
-                    'data'    => null
+                    'data'    => null,
                 ], 403);
             }
 
             if ($application->status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This application has already been reviewed',
-                    'data'    => null
+                    'message' => 'This application has already been reviewed.',
+                    'data'    => null,
                 ], 422);
             }
 
             $application->update(['status' => 'accepted']);
+            $application->load('jobListing');
 
-            // Load jobListing.employer so notification can access company name
-            $application->load('jobListing.employer.employerProfile');
-
-            try {
-                $application->candidate->notify(new ApplicationAccepted($application));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Failed to send acceptance notification', [
-                    'application_id' => $application->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            event(new ApplicationAccepted(
+                $application->id,
+                $application->job_listing_id,
+                $application->candidate_id,
+                $application->jobListing->employer_id,
+            ));
 
             return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
                 ->additional([
                     'success' => true,
-                    'message' => 'Application accepted successfully.'
+                    'message' => 'Application accepted successfully.',
                 ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to accept application: ' . $e->getMessage(),
-                'data'    => null
+                'data'    => null,
             ], 500);
         }
     }
 
-    /**
-     * Reject a candidate application
-     */
     public function reject(Request $request, $id)
     {
         try {
             $application = Application::find($id);
+
             if (!$application) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Application not found.',
-                    'data'    => null
+                    'data'    => null,
                 ], 404);
             }
 
@@ -128,46 +117,44 @@ class ApplicationController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'You are not authorized to manage this application.',
-                    'data'    => null
+                    'data'    => null,
                 ], 403);
             }
 
             if ($application->status !== 'pending') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This application has already been reviewed',
-                    'data'    => null
+                    'message' => 'This application has already been reviewed.',
+                    'data'    => null,
                 ], 422);
             }
 
             $reason = $request->input('reason', $request->input('rejection_reason', ''));
+
             $application->update([
-                'status' => 'rejected',
+                'status'           => 'rejected',
                 'rejection_reason' => $reason,
             ]);
+            $application->load('jobListing');
 
-            // Load jobListing.employer so notification can access company name
-            $application->load('jobListing.employer.employerProfile');
-
-            try {
-                $application->candidate->notify(new ApplicationRejected($application));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Failed to send rejection notification', [
-                    'application_id' => $application->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            event(new ApplicationRejected(
+                $application->id,
+                $application->job_listing_id,
+                $application->candidate_id,
+                $application->jobListing->employer_id,
+                $reason,
+            ));
 
             return (new ApplicationResource($application->load(['jobListing', 'candidate.candidateProfile'])))
                 ->additional([
                     'success' => true,
-                    'message' => 'Application rejected successfully.'
+                    'message' => 'Application rejected successfully.',
                 ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reject application: ' . $e->getMessage(),
-                'data'    => null
+                'data'    => null,
             ], 500);
         }
     }

@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateJobListingRequest;
 use App\Http\Resources\JobListingDetailResource;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
+use App\Domain\Events\JobPosted;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -79,6 +80,8 @@ class JobListingController extends Controller
             }
 
             $jobListing->load(['category', 'technologies', 'employer.employerProfile']);
+
+            event(new JobPosted($jobListing->id, $jobListing->employer_id, $jobListing->title));
 
             return (new JobListingResource($jobListing))
                 ->additional([
@@ -241,6 +244,8 @@ class JobListingController extends Controller
             $jobListing->technologies()->delete();
 
             $jobListing->delete();
+
+            event(new \App\Domain\Events\JobDeleted($id, $jobListing->employer_id, $jobListing->title));
 
             return response()->json([
                 'success' => true,

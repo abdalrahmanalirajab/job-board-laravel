@@ -35,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Application\Interfaces\PaymentApplicationInterface::class,
             \App\Infrastructure\Persistence\EloquentPaymentApplicationService::class,
         );
+
+        $this->app->bind(
+            \App\Application\Interfaces\NotificationRepositoryInterface::class,
+            \App\Repositories\EloquentNotificationRepository::class,
+        );
     }
 
     /**

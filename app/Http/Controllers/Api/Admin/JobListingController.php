@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Domain\Events\JobApproved;
+use App\Domain\Events\JobRejected;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\JobListingResource;
 use App\Models\JobListing;
-use App\Notifications\JobApproved;
-use App\Notifications\JobRejected;
 use Illuminate\Http\Request;
 
 class JobListingController extends Controller
@@ -57,8 +57,7 @@ class JobListingController extends Controller
             $jobListing->update(['status' => 'approved']);
             $jobListing->load(['category', 'technologies', 'employer.employerProfile']);
 
-            // Notify the employer
-            $jobListing->employer->notify(new JobApproved($jobListing));
+            event(new JobApproved($jobListing->id, $jobListing->employer_id, $jobListing->title));
 
             return (new JobListingResource($jobListing))->additional([
                 'success' => true,
@@ -90,14 +89,15 @@ class JobListingController extends Controller
                 ], 404);
             }
 
+            $reason = $request->input('reason');
+
             $jobListing->update([
-                'status' => 'rejected',
-                'rejection_reason' => $request->input('reason'),
+                'status'           => 'rejected',
+                'rejection_reason' => $reason,
             ]);
             $jobListing->load('employer');
 
-            // Notify the employer with optional reason
-            $jobListing->employer->notify(new JobRejected($jobListing, $request->input('reason')));
+            event(new JobRejected($jobListing->id, $jobListing->employer_id, $jobListing->title, $reason));
 
             return response()->json([
                 'success' => true,
@@ -105,7 +105,7 @@ class JobListingController extends Controller
                 'data'    => [
                     'id'     => $jobListing->id,
                     'status' => $jobListing->status,
-                    'reason' => $request->input('reason'),
+                    'reason' => $reason,
                 ],
             ]);
         } catch (\Throwable $e) {
